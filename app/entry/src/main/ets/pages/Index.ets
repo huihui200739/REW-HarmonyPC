@@ -15,6 +15,24 @@ struct Index {
     this.run();
   }
 
+  private async ensureJars(ctx: common.UIAbilityContext): Promise<string> {
+    const jarsDir = ctx.filesDir + '/jars';
+    if (!fs.accessSync(jarsDir)) {
+      fs.mkdirSync(jarsDir, true);
+    }
+    // 已解压则跳过（以主 jar 存在为准）
+    if (fs.accessSync(jarsDir + '/RoomEQ_Wizard_obf.jar')) {
+      return jarsDir;
+    }
+    const zipPath = ctx.filesDir + '/rew-jars.zip';
+    const data = await ctx.resourceManager.getRawFileContent('rew-jars.zip');
+    const f = fs.openSync(zipPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE | fs.OpenMode.TRUNC);
+    fs.writeSync(f.fd, data.buffer as ArrayBuffer);
+    fs.closeSync(f);
+    await zlib.decompressFile(zipPath, jarsDir);
+    return jarsDir;
+  }
+
   private async ensureRuntime(ctx: common.UIAbilityContext): Promise<string> {
     const jreDir = ctx.filesDir + '/jre';
     const modulesPath = jreDir + '/lib/modules';
@@ -47,6 +65,8 @@ struct Index {
     this.log = '解压 runtime 并启动 JVM…';
     try {
       const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const jarsDir = await this.ensureJars(ctx);
+      hilog.info(0x0000, 'REWJVM', 'jars=%{public}s', jarsDir);
       const jreDir = await this.ensureRuntime(ctx);
       hilog.info(0x0000, 'REWJVM', 'java.home=%{public}s', jreDir);
       const mem: string = memProbe();

@@ -38,6 +38,7 @@ CONFIGURE_ARGS=(
   --disable-warnings-as-errors
   --with-native-debug-symbols=none
   "--with-conf-name=$CONF_NAME"
+  "--with-extra-cflags=-I$ROOT_DIR/jvm/x11-stub"
 )
 
 case "${1:-}" in

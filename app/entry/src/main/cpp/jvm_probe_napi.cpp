@@ -13,6 +13,7 @@
 #include <cstring>
 #include <cstdio>
 #include <sys/mman.h>
+#include <dirent.h>
 #include <unistd.h>
 
 namespace {
@@ -40,6 +41,21 @@ std::string ExecMemProbe() {
 }
 
 #define JLOG(...) OH_LOG_INFO(LOG_APP, __VA_ARGS__)
+
+std::string BuildClasspath(const std::string &jarDir) {
+    std::string cp = ".";
+    DIR *d = opendir(jarDir.c_str());
+    if (!d) return cp;
+    struct dirent *e;
+    while ((e = readdir(d)) != nullptr) {
+        std::string name = e->d_name;
+        if (name.size() > 4 && name.substr(name.size() - 4) == ".jar") {
+            cp += ":" + jarDir + "/" + name;
+        }
+    }
+    closedir(d);
+    return cp;
+}
 
 std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     std::string out = ExecMemProbe();
@@ -75,7 +91,10 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     int n = 0;
     std::string homeOpt = "-Djava.home=" + javaHome;
     std::string tmpOpt = "-Djava.io.tmpdir=" + workDir;
+    std::string jarDir = workDir + "/jars";
+    std::string cpOpt = "-Djava.class.path=" + BuildClasspath(jarDir);
     opts[n++].optionString = const_cast<char *>(homeOpt.c_str());
+    opts[n++].optionString = const_cast<char *>(cpOpt.c_str());
     opts[n++].optionString = const_cast<char *>(tmpOpt.c_str());
     opts[n++].optionString = const_cast<char *>("-Xint");
     opts[n++].optionString = bufA;
@@ -126,6 +145,28 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
 
     jclass list = env->FindClass("java/util/ArrayList");
     out += std::string("FindClass(ArrayList)=") + (list ? "OK" : "FAIL") + "\n";
+
+    env->ExceptionClear();
+    jclass rew = env->FindClass("roomeqwizard/RoomEQ_Wizard");
+    if (rew) {
+        out += "FindClass(REW main)=OK\n";
+    } else {
+        out += "FindClass(REW main)=FAIL\n";
+        jthrowable ex = env->ExceptionOccurred();
+        env->ExceptionClear();
+        if (ex) {
+            jclass throwable = env->FindClass("java/lang/Throwable");
+            jmethodID toStr = env->GetMethodID(throwable, "toString", "()Ljava/lang/String;");
+            auto s = static_cast<jstring>(env->CallObjectMethod(ex, toStr));
+            if (s) {
+                const char *cs = env->GetStringUTFChars(s, nullptr);
+                out += std::string("  exception: ") + (cs ? cs : "?") + "\n";
+                env->ReleaseStringUTFChars(s, cs);
+            }
+        }
+        jclass cnf = env->FindClass("java/lang/NoClassDefFoundError");
+        (void)cnf;
+    }
 
     vm->DestroyJavaVM();
     out += "DONE\n";
