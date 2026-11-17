@@ -33,7 +33,7 @@ PY
 
 echo "[3/4] 构建入口"
 for f in jvm/build-openjdk.sh platform/build-platform.sh app/build-profile.json5; do
-  if [ -e "$f" ]; then echo "  有 $f"; else echo "  缺 $f（对应阶段尚未产出）"; fi
+  if [ -e "$f" ]; then echo "  有 ${f}"; else echo "  缺 ${f}（对应阶段尚未产出）"; fi
 done
 
 if [ "${1:-}" != "--device" ]; then

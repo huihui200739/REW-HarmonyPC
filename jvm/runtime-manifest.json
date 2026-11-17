@@ -1,4 +1,6 @@
 {
+  "jdk": "openjdk-21 (Harmonybrew OHOS 补丁路线) / 回退 openjdk-8",
+  "target": "aarch64-linux-ohos (OpenHarmony 6.1.1.125 / API 24)",
   "upstream": {
     "name": "REW",
     "version": "5.31.3",
