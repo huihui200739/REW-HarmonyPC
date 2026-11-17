@@ -12,6 +12,7 @@ CONFIG_DIR="$JDK_SOURCE_DIR/build/$CONF_NAME"
 SPEC_FILE="$CONFIG_DIR/spec.gmk"
 JMODS_DIR="$CONFIG_DIR/images/jmods"
 RUNTIME_IMAGE="$CONFIG_DIR/images/ohos-runtime"
+MODULES="${JDK_RUNTIME_MODULES:-java.base}"
 LLVM_READELF="$OHOS_NDK_ROOT/llvm/bin/llvm-readelf"
 TEMP_IMAGE=""
 
@@ -70,7 +71,7 @@ case "${1:-}" in
     echo "jlink 生成 runtime …"
     TEMP_IMAGE="$CONFIG_DIR/images/.ohos-runtime.$$"
     rm -rf "$TEMP_IMAGE"
-    "$JLINK" --module-path "$JMODS_DIR" --add-modules java.base \
+    "$JLINK" --module-path "$JMODS_DIR" --add-modules "${MODULES}" \
       --strip-debug --no-header-files --no-man-pages --output "$TEMP_IMAGE"
     rm -rf "$RUNTIME_IMAGE"
     mv "$TEMP_IMAGE" "$RUNTIME_IMAGE"

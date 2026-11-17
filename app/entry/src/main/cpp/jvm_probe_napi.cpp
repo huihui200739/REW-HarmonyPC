@@ -150,6 +150,24 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     jclass rew = env->FindClass("roomeqwizard/RoomEQ_Wizard");
     if (rew) {
         out += "FindClass(REW main)=OK\n";
+        jmethodID mainMid = env->GetStaticMethodID(rew, "main", "([Ljava/lang/String;)V");
+        if (!mainMid) {
+            env->ExceptionDescribe();
+            env->ExceptionClear();
+            out += "GetStaticMethodID(main)=FAIL\n";
+        } else {
+            jclass strCls = env->FindClass("java/lang/String");
+            jobjectArray emptyArgs = env->NewObjectArray(0, strCls, nullptr);
+            out += "invoking main()...\n";
+            env->CallStaticVoidMethod(rew, mainMid, emptyArgs);
+            if (env->ExceptionCheck()) {
+                out += "main() threw:\n";
+                env->ExceptionDescribe();
+                env->ExceptionClear();
+            } else {
+                out += "main() returned\n";
+            }
+        }
     } else {
         out += "FindClass(REW main)=FAIL\n";
         jthrowable ex = env->ExceptionOccurred();
