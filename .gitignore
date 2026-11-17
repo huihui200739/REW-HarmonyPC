@@ -1,0 +1,31 @@
+# 构建产物
+/out/
+/build/
+**/build/
+**/.cxx/
+**/.hvigor/
+**/.preview/
+**/oh_modules/
+**/node_modules/
+*.hap
+*.so
+*.a
+*.o
+*.pyc
+__pycache__/
+.DS_Store
+
+# 上游二进制：不入库（EULA）
+/app/lib/*.jar
+/jvm/sysroot/
+/jvm/out/
+/reports/*.png
+*.mdat
+
+# 密钥
+*.p12
+*.pfx
+*.keystore
+local.properties
+.env
+*.log
