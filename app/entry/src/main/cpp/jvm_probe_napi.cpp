@@ -254,7 +254,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             for (auto &ch2 : sym) { if (ch2 == '/') ch2 = '_'; }
             sym += "_initIDs";
             void *fn = dlsym(RTLD_DEFAULT, sym.c_str());
-            if (fn) { real++; } else { fn = (void *)EmptyInitIDs; stub++; }
+            if (fn) { real++; } else { fn = (void *)EmptyInitIDs; stub++; JLOG("stub class: %{public}s", cn); }
             JNINativeMethod m = { const_cast<char *>("initIDs"), const_cast<char *>("()V"), fn };
             if (env->RegisterNatives(k, &m, 1) == 0) { ok++; }
             else { env->ExceptionClear(); JLOG("reg: RegisterNatives fail %{public}s", cn); fail++; }
