@@ -42,6 +42,81 @@ std::string ExecMemProbe() {
 
 #define JLOG(...) OH_LOG_INFO(LOG_APP, __VA_ARGS__)
 
+namespace {
+void JNICALL EmptyInitIDs(JNIEnv *, jclass) {}
+
+const char *kInitIdClasses[] = {
+    "java/awt/AWTEvent",
+    "java/awt/Button",
+    "java/awt/Checkbox",
+    "java/awt/CheckboxMenuItem",
+    "java/awt/Choice",
+    "java/awt/Color",
+    "java/awt/Component",
+    "java/awt/Container",
+    "java/awt/Cursor",
+    "java/awt/Dialog",
+    "java/awt/Dimension",
+    "java/awt/Event",
+    "java/awt/FileDialog",
+    "java/awt/Font",
+    "java/awt/FontMetrics",
+    "java/awt/Frame",
+    "java/awt/Insets",
+    "java/awt/KeyboardFocusManager",
+    "java/awt/Label",
+    "java/awt/Menu",
+    "java/awt/MenuBar",
+    "java/awt/MenuComponent",
+    "java/awt/MenuItem",
+    "java/awt/Rectangle",
+    "java/awt/ScrollPane",
+    "java/awt/ScrollPaneAdjustable",
+    "java/awt/Scrollbar",
+    "java/awt/TextArea",
+    "java/awt/TextField",
+    "java/awt/Toolkit",
+    "java/awt/TrayIcon",
+    "java/awt/Window",
+    "java/awt/event/InputEvent",
+    "java/awt/event/KeyEvent",
+    "java/awt/event/MouseEvent",
+    "java/awt/image/BufferedImage",
+    "java/awt/image/ColorModel",
+    "java/awt/image/IndexColorModel",
+    "java/awt/image/Kernel",
+    "java/awt/image/Raster",
+    "java/awt/image/SampleModel",
+    "java/awt/image/SinglePixelPackedSampleModel",
+    "sun/awt/FontDescriptor",
+    "sun/awt/PlatformFont",
+    "sun/awt/X11/GtkFileDialogPeer",
+    "sun/awt/X11/XToolkit",
+    "sun/awt/X11/XWindow",
+    "sun/awt/X11GraphicsConfig",
+    "sun/awt/X11InputMethodBase",
+    "sun/awt/image/BufImgSurfaceData",
+    "sun/awt/image/ByteComponentRaster",
+    "sun/awt/image/BytePackedRaster",
+    "sun/awt/image/GifImageDecoder",
+    "sun/awt/image/ImageRepresentation",
+    "sun/awt/image/IntegerComponentRaster",
+    "sun/awt/image/JPEGImageDecoder",
+    "sun/awt/image/ShortComponentRaster",
+    "sun/font/FreetypeFontScaler",
+    "sun/font/SunFontManager",
+    "sun/java2d/Disposer",
+    "sun/java2d/SurfaceData",
+    "sun/java2d/loops/GraphicsPrimitiveMgr",
+    "sun/java2d/pipe/Region",
+    "sun/java2d/pipe/ShapeSpanIterator",
+    "sun/java2d/pipe/SpanClipRenderer",
+    "sun/java2d/x11/X11SurfaceData",
+    "sun/java2d/xr/XRBackendNative",
+    "sun/java2d/xr/XRSurfaceData",
+};
+}  // namespace
+
 std::string BuildClasspath(const std::string &jarDir) {
     std::string cp = ".";
     DIR *d = opendir(jarDir.c_str());
@@ -139,6 +214,27 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     }
     out += "JNI_CreateJavaVM: OK\n";
     {
+        int ok = 0, fail = 0;
+        jclass classClass = env->FindClass("java/lang/Class");
+        jmethodID forNameMid = env->GetStaticMethodID(classClass, "forName",
+            "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;");
+        jclass clCls = env->FindClass("java/lang/ClassLoader");
+        jmethodID getSysMid = env->GetStaticMethodID(clCls, "getSystemClassLoader", "()Ljava/lang/ClassLoader;");
+        jobject sysLoader = env->CallStaticObjectMethod(clCls, getSysMid);
+        for (const char *cn : kInitIdClasses) {
+            // 用 Class.forName(name, false, loader) 避免触发静态初始化
+            std::string dotted(cn);
+            for (auto &ch2 : dotted) { if (ch2 == '/') ch2 = '.'; }
+            jstring nm = env->NewStringUTF(dotted.c_str());
+            jclass k = (jclass)env->CallStaticObjectMethod(classClass, forNameMid, nm, JNI_FALSE, sysLoader);
+            if (!k) { env->ExceptionClear(); JLOG("reg: forName fail %{public}s", cn); fail++; continue; }
+            JNINativeMethod m = { const_cast<char *>("initIDs"), const_cast<char *>("()V"), (void *)EmptyInitIDs };
+            if (env->RegisterNatives(k, &m, 1) == 0) { ok++; }
+            else { env->ExceptionClear(); JLOG("reg: RegisterNatives fail %{public}s", cn); fail++; }
+        }
+        JLOG("RegisterNatives initIDs ok=%{public}d fail=%{public}d", ok, fail);
+    }
+    {
         // 手动触发 libawt 的 JNI_OnLoad：JVM 通过 System.loadLibrary 加载时可能已在本进程映射，
         // 不再执行注册函数，导致 Font/Graphics 等 initIDs 未注册。
         void *libawt = dlopen("libawt.so", RTLD_NOW | RTLD_GLOBAL);
@@ -151,6 +247,18 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             if (onload) {
                 jint v = onload(vm, nullptr);
                 JLOG("libawt JNI_OnLoad ret=%{public}d", static_cast<int>(v));
+            }
+        }
+        void *libheadless = dlopen("libawt_headless.so", RTLD_NOW | RTLD_GLOBAL);
+        if (!libheadless) {
+            JLOG("libawt_headless dlopen FAIL: %{public}s", dlerror());
+        } else {
+            using OnLoadFn2 = jint (*)(JavaVM *, void *);
+            auto onload2 = reinterpret_cast<OnLoadFn2>(dlsym(libheadless, "JNI_OnLoad"));
+            JLOG("libawt_headless JNI_OnLoad ptr=%{public}s", onload2 ? "found" : "missing");
+            if (onload2) {
+                jint v2 = onload2(vm, nullptr);
+                JLOG("libawt_headless JNI_OnLoad ret=%{public}d", static_cast<int>(v2));
             }
         }
     }
