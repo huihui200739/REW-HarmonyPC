@@ -1,0 +1,11 @@
+{
+  "name": "entry",
+  "version": "1.0.0",
+  "description": "REW Harmony PC entry module",
+  "main": "",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "librewjvm.so": "file:./src/main/cpp/types/librewjvm"
+  }
+}

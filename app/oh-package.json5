@@ -1,0 +1,8 @@
+{
+  "modelVersion": "6.0.0",
+  "name": "chimerax-harmonypc",
+  "version": "0.1.0",
+  "description": "ChimeraX Harmony PC application entry (generic runtime validation, not the full application)",
+  "dependencies": {},
+  "devDependencies": {}
+}
