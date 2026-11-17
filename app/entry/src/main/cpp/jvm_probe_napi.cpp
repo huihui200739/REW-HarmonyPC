@@ -180,6 +180,8 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     static char libPathOpt[] = "-Djava.library.path=/data/storage/el1/bundle/libs/arm64";
     static char cmmOpt[] = "-Dsun.java2d.cmm=ohos.cmm.OhosCmmServiceProvider";
     static char cmmExp[] = "--add-exports=java.desktop/sun.java2d.cmm=ALL-UNNAMED";
+    static char fontCfgOpt[] = "-Dsun.awt.fontconfig=/data/storage/el2/base/haps/entry/files/jre/lib/fontconfig.properties.src";
+    static char fontDbgOpt[] = "-Dsun.awt.debugFonts=true";
     std::string homeDirOpt = "-Duser.home=" + workDir + "/home";
     JavaVMOption opts[20];
     int n = 0;
@@ -205,6 +207,8 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     opts[n++].optionString = libPathOpt;
     opts[n++].optionString = cmmOpt;
     opts[n++].optionString = cmmExp;
+    opts[n++].optionString = fontCfgOpt;
+    opts[n++].optionString = fontDbgOpt;
     opts[n++].optionString = const_cast<char *>(homeDirOpt.c_str());
 
     JavaVMInitArgs args;

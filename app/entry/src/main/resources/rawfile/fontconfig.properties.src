@@ -1,29 +1,177 @@
+#
+#
+# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Version
+
+# Uses Fedora Core 6 fonts and file paths.
 version=1
 
-# OHOS minimal font configuration (Arial only)
-dialog.plain.latin-1=Arial
-dialog.bold.latin-1=Arial Bold
-dialog.italic.latin-1=Arial Italic
-dialog.bolditalic.latin-1=Arial Bold Italic
+# Component Font Mappings
 
-serif.plain.latin-1=Arial
-serif.bold.latin-1=Arial Bold
-serif.italic.latin-1=Arial Italic
-serif.bolditalic.latin-1=Arial Bold Italic
+dialog.plain.latin-1=Arial
+dialog.plain.japanese-x0208=Arial
+dialog.plain.korean=Arial
+dialog.plain.chinese-big5=Arial
+dialog.plain.chinese-gb18030=Arial
+
+dialog.bold.latin-1=Arial Bold
+dialog.bold.japanese-x0208=Arial Bold
+dialog.bold.korean=Arial Bold
+dialog.bold.chinese-big5=Arial Bold
+dialog.bold.chinese-gb18030=Arial Bold
+
+dialog.italic.latin-1=Arial Italic
+dialog.italic.japanese-x0208=Arial Italic
+dialog.italic.korean=Arial Italic
+dialog.italic.chinese-big5=Arial Italic
+dialog.italic.chinese-gb18030=Arial Italic
+
+dialog.bolditalic.latin-1=Arial Bold Italic
+dialog.bolditalic.japanese-x0208=Arial Bold Italic
+dialog.bolditalic.korean=Arial Bold Italic
+dialog.bolditalic.chinese-big5=Arial Bold Italic
+dialog.bolditalic.chinese-gb18030=Arial Bold Italic
+
 
 sansserif.plain.latin-1=Arial
+sansserif.plain.japanese-x0208=Arial
+sansserif.plain.korean=Arial
+sansserif.plain.chinese-big5=Arial
+sansserif.plain.chinese-gb18030=Arial
+
 sansserif.bold.latin-1=Arial Bold
+sansserif.bold.japanese-x0208=Arial Bold
+sansserif.bold.korean=Arial Bold
+sansserif.bold.chinese-big5=Arial Bold
+sansserif.bold.chinese-gb18030=Arial Bold
+
 sansserif.italic.latin-1=Arial Italic
+sansserif.italic.japanese-x0208=Arial Italic
+sansserif.italic.korean=Arial Italic
+sansserif.italic.chinese-big5=Arial Italic
+sansserif.italic.chinese-gb18030=Arial Italic
+
 sansserif.bolditalic.latin-1=Arial Bold Italic
+sansserif.bolditalic.japanese-x0208=Arial Bold Italic
+sansserif.bolditalic.korean=Arial Bold Italic
+sansserif.bolditalic.chinese-big5=Arial Bold Italic
+sansserif.bolditalic.chinese-gb18030=Arial Bold Italic
+
+
+serif.plain.latin-1=Arial
+serif.plain.japanese-x0208=Arial
+serif.plain.korean=Arial
+serif.plain.chinese-big5=Arial
+serif.plain.chinese-gb18030=Arial
+
+serif.bold.latin-1=Arial Bold
+serif.bold.japanese-x0208=Arial Bold
+serif.bold.korean=Arial Bold
+serif.bold.chinese-big5=Arial Bold
+serif.bold.chinese-gb18030=Arial Bold
+
+serif.italic.latin-1=Arial Italic
+serif.italic.japanese-x0208=Arial Italic
+serif.italic.korean=Arial Italic
+serif.italic.chinese-big5=Arial Italic
+serif.italic.chinese-gb18030=Arial Italic
+
+serif.bolditalic.latin-1=Arial Bold Italic
+serif.bolditalic.japanese-x0208=Arial Bold Italic
+serif.bolditalic.korean=Arial Bold Italic
+serif.bolditalic.chinese-big5=Arial Bold Italic
+serif.bolditalic.chinese-gb18030=Arial Bold Italic
+
 
 monospaced.plain.latin-1=Arial
+monospaced.plain.japanese-x0208=Arial
+monospaced.plain.korean=Arial
+monospaced.plain.chinese-big5=Arial
+monospaced.plain.chinese-gb18030=Arial
+
 monospaced.bold.latin-1=Arial Bold
+monospaced.bold.japanese-x0208=Arial Bold
+monospaced.bold.korean=Arial Bold
+monospaced.bold.chinese-big5=Arial Bold
+monospaced.bold.chinese-gb18030=Arial Bold
+
 monospaced.italic.latin-1=Arial Italic
+monospaced.italic.japanese-x0208=Arial Italic
+monospaced.italic.korean=Arial Italic
+monospaced.italic.chinese-big5=Arial Italic
+monospaced.italic.chinese-gb18030=Arial Italic
+
 monospaced.bolditalic.latin-1=Arial Bold Italic
+monospaced.bolditalic.japanese-x0208=Arial Bold Italic
+monospaced.bolditalic.korean=Arial Bold Italic
+monospaced.bolditalic.chinese-big5=Arial Bold Italic
+monospaced.bolditalic.chinese-gb18030=Arial Bold Italic
+
+
+dialoginput.plain.latin-1=DejaVu LGC Sans Mono
+dialoginput.plain.japanese-x0208=Sazanami Gothic
+dialoginput.plain.korean=Baekmuk Gulim
+dialoginput.plain.chinese-big5=AR PL ShanHeiSun Uni
+dialoginput.plain.chinese-gb18030=AR PL ShanHeiSun Uni
+
+dialoginput.bold.latin-1=DejaVu LGC Sans Mono Bold
+dialoginput.bold.japanese-x0208=Sazanami Gothic
+dialoginput.bold.korean=Baekmuk Gulim
+dialoginput.bold.chinese-big5=AR PL ShanHeiSun Uni
+dialoginput.bold.chinese-gb18030=AR PL ShanHeiSun Uni
+
+dialoginput.italic.latin-1=DejaVu LGC Sans Mono Oblique
+dialoginput.italic.japanese-x0208=Sazanami Gothic
+dialoginput.italic.korean=Baekmuk Gulim
+dialoginput.italic.chinese-big5=AR PL ShanHeiSun Uni
+dialoginput.italic.chinese-gb18030=AR PL ShanHeiSun Uni
+
+dialoginput.bolditalic.latin-1=DejaVu LGC Sans Mono Bold Oblique
+dialoginput.bolditalic.japanese-x0208=Sazanami Gothic
+dialoginput.bolditalic.korean=Baekmuk Gulim
+dialoginput.bolditalic.chinese-big5=AR PL ShanHeiSun Uni
+dialoginput.bolditalic.chinese-gb18030=AR PL ShanHeiSun Uni
+
+# Search Sequences
 
 sequence.allfonts=latin-1
+sequence.allfonts.Big5=chinese-big5,latin-1
+sequence.allfonts.x-euc-jp-bsd=japanese-x0208,latin-1
+sequence.allfonts.EUC-KR=korean,latin-1
+sequence.allfonts.GB18030=chinese-gb18030,latin-1
+sequence.fallback=chinese-big5,chinese-gb18030,japanese-x0208,korean
 
-# Font file names
+# Font File Names
+
+
+
+
+
+
+# Font file names (OHOS sandbox)
 filename.Arial=/data/storage/el2/base/haps/entry/files/fonts/Arial.ttf
 filename.Arial_Bold=/data/storage/el2/base/haps/entry/files/fonts/Arial Bold.ttf
 filename.Arial_Italic=/data/storage/el2/base/haps/entry/files/fonts/Arial Italic.ttf
