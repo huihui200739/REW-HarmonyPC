@@ -177,6 +177,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     static char bufI[] = "--add-opens=java.desktop/java.awt=ALL-UNNAMED";
     static char bufJ[] = "--add-exports=java.desktop/java.awt.peer=ALL-UNNAMED";
     static char bufK[] = "--add-exports=java.desktop/sun.awt=ALL-UNNAMED";
+    static char libPathOpt[] = "-Djava.library.path=/data/storage/el1/bundle/libs/arm64";
     std::string homeDirOpt = "-Duser.home=" + workDir + "/home";
     JavaVMOption opts[20];
     int n = 0;
@@ -199,6 +200,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     opts[n++].optionString = bufI;
     opts[n++].optionString = bufJ;
     opts[n++].optionString = bufK;
+    opts[n++].optionString = libPathOpt;
     opts[n++].optionString = const_cast<char *>(homeDirOpt.c_str());
 
     JavaVMInitArgs args;
