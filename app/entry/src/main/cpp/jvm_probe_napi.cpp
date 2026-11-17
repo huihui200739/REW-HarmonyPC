@@ -45,6 +45,15 @@ std::string ExecMemProbe() {
 namespace {
 void JNICALL EmptyInitIDs(JNIEnv *, jclass) {}
 
+// LCMS 兼容层：OHOS 上暂时不启用 lcms（其 native 依赖未注册的字段 ID，会空指针崩溃）。
+// 返回 0/空，让 Java 侧走异常路径而不是崩进程。
+jlong JNICALL LcmsLoadProfile(JNIEnv *, jclass, jbyteArray, jobject) { return 0; }
+void JNICALL LcmsInit(JNIEnv *, jclass, jclass, jclass, jclass) {}
+jbyteArray JNICALL LcmsGetProfileData(JNIEnv *, jclass, jlong) { return nullptr; }
+jbyteArray JNICALL LcmsGetTag(JNIEnv *, jclass, jlong, jint) { return nullptr; }
+void JNICALL LcmsSetTag(JNIEnv *, jclass, jlong, jint, jbyteArray) {}
+jobject JNICALL LcmsGetProfileID(JNIEnv *, jclass, jobject) { return nullptr; }
+
 const char *kInitIdClasses[] = {
     "java/awt/AWTEvent",
     "java/awt/Button",
@@ -247,6 +256,16 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             if (onload) {
                 jint v = onload(vm, nullptr);
                 JLOG("libawt JNI_OnLoad ret=%{public}d", static_cast<int>(v));
+            }
+        }
+        void *liblcms = dlopen("liblcms.so", RTLD_NOW | RTLD_GLOBAL);
+        if (liblcms) {
+            using OnLoadFn3 = jint (*)(JavaVM *, void *);
+            auto onload3 = reinterpret_cast<OnLoadFn3>(dlsym(liblcms, "JNI_OnLoad"));
+            if (onload3) {
+                JLOG("liblcms JNI_OnLoad ret=%{public}d", static_cast<int>(onload3(vm, nullptr)));
+            } else {
+                JLOG("liblcms JNI_OnLoad missing");
             }
         }
         void *libheadless = dlopen("libawt_headless.so", RTLD_NOW | RTLD_GLOBAL);
