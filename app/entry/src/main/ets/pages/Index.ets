@@ -53,6 +53,22 @@ struct Index {
     fs.writeSync(file.fd, data.buffer as ArrayBuffer);
     fs.closeSync(file);
     await zlib.decompressFile(zipPath, jreDir);
+    // 布署字体与字体配置（OHOS 没有 fontconfig，需要 JDK 自带配置）
+    const fontsDir = ctx.filesDir + '/fonts';
+    if (!fs.accessSync(fontsDir)) {
+      fs.mkdirSync(fontsDir, true);
+    }
+    for (const f of ['Arial.ttf', 'Arial Bold.ttf', 'Arial Italic.ttf', 'Arial Bold Italic.ttf']) {
+      const buf = await ctx.resourceManager.getRawFileContent('fonts/' + f);
+      const out = fs.openSync(fontsDir + '/' + f, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE | fs.OpenMode.TRUNC);
+      fs.writeSync(out.fd, buf.buffer as ArrayBuffer);
+      fs.closeSync(out);
+    }
+    const cfg = await ctx.resourceManager.getRawFileContent('fontconfig.properties.src');
+    const cfgOut = fs.openSync(jreDir + '/lib/fontconfig.properties.src',
+      fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE | fs.OpenMode.TRUNC);
+    fs.writeSync(cfgOut.fd, cfg.buffer as ArrayBuffer);
+    fs.closeSync(cfgOut);
     return jreDir;
   }
 

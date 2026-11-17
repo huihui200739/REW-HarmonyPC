@@ -1,0 +1,30 @@
+version=1
+
+# OHOS minimal font configuration (Arial only)
+dialog.plain.latin-1=Arial
+dialog.bold.latin-1=Arial Bold
+dialog.italic.latin-1=Arial Italic
+dialog.bolditalic.latin-1=Arial Bold Italic
+
+serif.plain.latin-1=Arial
+serif.bold.latin-1=Arial Bold
+serif.italic.latin-1=Arial Italic
+serif.bolditalic.latin-1=Arial Bold Italic
+
+sansserif.plain.latin-1=Arial
+sansserif.bold.latin-1=Arial Bold
+sansserif.italic.latin-1=Arial Italic
+sansserif.bolditalic.latin-1=Arial Bold Italic
+
+monospaced.plain.latin-1=Arial
+monospaced.bold.latin-1=Arial Bold
+monospaced.italic.latin-1=Arial Italic
+monospaced.bolditalic.latin-1=Arial Bold Italic
+
+sequence.allfonts=latin-1
+
+# Font file names
+filename.Arial=/data/storage/el2/base/haps/entry/files/fonts/Arial.ttf
+filename.Arial_Bold=/data/storage/el2/base/haps/entry/files/fonts/Arial Bold.ttf
+filename.Arial_Italic=/data/storage/el2/base/haps/entry/files/fonts/Arial Italic.ttf
+filename.Arial_Bold_Italic=/data/storage/el2/base/haps/entry/files/fonts/Arial Bold Italic.ttf
