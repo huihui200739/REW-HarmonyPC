@@ -233,7 +233,10 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     }
     out += "JNI_CreateJavaVM: OK\n";
     {
-        int ok = 0, fail = 0;
+        // 确保 initIDs 转发前库已加载（dlsym 需要符号在全局作用域）
+        dlopen("libawt.so", RTLD_NOW | RTLD_GLOBAL);
+        dlopen("libawt_headless.so", RTLD_NOW | RTLD_GLOBAL);
+        int ok = 0, fail = 0, real = 0, stub = 0;
         jclass classClass = env->FindClass("java/lang/Class");
         jmethodID forNameMid = env->GetStaticMethodID(classClass, "forName",
             "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;");
@@ -247,11 +250,16 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             jstring nm = env->NewStringUTF(dotted.c_str());
             jclass k = (jclass)env->CallStaticObjectMethod(classClass, forNameMid, nm, JNI_FALSE, sysLoader);
             if (!k) { env->ExceptionClear(); JLOG("reg: forName fail %{public}s", cn); fail++; continue; }
-            JNINativeMethod m = { const_cast<char *>("initIDs"), const_cast<char *>("()V"), (void *)EmptyInitIDs };
+            std::string sym = std::string("Java_") + cn;
+            for (auto &ch2 : sym) { if (ch2 == '/') ch2 = '_'; }
+            sym += "_initIDs";
+            void *fn = dlsym(RTLD_DEFAULT, sym.c_str());
+            if (fn) { real++; } else { fn = (void *)EmptyInitIDs; stub++; }
+            JNINativeMethod m = { const_cast<char *>("initIDs"), const_cast<char *>("()V"), fn };
             if (env->RegisterNatives(k, &m, 1) == 0) { ok++; }
             else { env->ExceptionClear(); JLOG("reg: RegisterNatives fail %{public}s", cn); fail++; }
         }
-        JLOG("RegisterNatives initIDs ok=%{public}d fail=%{public}d", ok, fail);
+        JLOG("register: ok=%{public}d fail=%{public}d real=%{public}d stub=%{public}d", ok, fail, real, stub);
         {
             jclass cms = (jclass)env->CallStaticObjectMethod(classClass, forNameMid,
                 env->NewStringUTF("sun.java2d.cmm.CMSManager"), JNI_FALSE, sysLoader);
