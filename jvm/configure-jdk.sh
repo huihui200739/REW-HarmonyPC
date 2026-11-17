@@ -17,9 +17,10 @@ check_tools() {
     local v; v="$("$BOOT_JDK/bin/java" -version 2>&1 | head -1)"
     [[ "$v" == *'"17'* ]] || { echo "boot JDK 必须是 17：$v" >&2; ok=0; }
   fi
-  for t in make autoconf unzip zip; do command -v "$t" >/dev/null || { echo "缺工具: $t" >&2; ok=0; }; done
-  [[ -d "$JDK_SOURCE_DIR/configure" || -x "$JDK_SOURCE_DIR/configure" ]] || { echo "缺 configure：$JDK_SOURCE_DIR" >&2; ok=0; }
-  [[ $ok == 1 ]] && echo "工具链检查通过：API $OHOS_API_LEVEL，target $OHOS_TARGET，boot JDK $BOOT_JDK"
+  for t in make unzip zip; do command -v "$t" >/dev/null || { echo "缺工具: $t" >&2; ok=0; }; done
+  command -v autoconf >/dev/null || echo "  提示：未装 autoconf（configure 已随源码提供时不影响构建）"
+  [[ -f "$JDK_SOURCE_DIR/configure" ]] || { echo "缺 configure：$JDK_SOURCE_DIR" >&2; ok=0; }
+  [[ $ok == 1 ]] && echo "工具链检查通过：API ${OHOS_API_LEVEL}，target ${OHOS_TARGET}，boot JDK ${BOOT_JDK}"
   return $((1-ok))
 }
 
