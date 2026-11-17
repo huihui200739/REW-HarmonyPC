@@ -40,7 +40,7 @@
 
 | 级别 | 内容 | 状态 |
 |---|---|---|
-| **T0 基础** | JVM 在 OHOS arm64 启动 `java -version`；REW jar 进入主循环并创建首帧 | 进行中：`libjvm.so` 已交叉编译产出（AArch64 / `JNI_CreateJavaVM` / 无 GLIBC 符号），设备加载待验 |
+| **T0 基础** | JVM 在 OHOS arm64 启动 `java -version`；REW jar 进入主循环并创建首帧 | 部分达成：OpenJDK 17 HotSpot 已在模拟器应用内完成初始化（`JNI_CreateJavaVM: OK`、`java.version=17.0.17-internal`、`FindClass` 成功），REW 本体待 `java.desktop` |
 | **T1 主要** | 主界面完整渲染（菜单/工具栏/图表区）；`.mdat` 读写；音频设备枚举；频率响应曲线绘制 | 未开始 |
 | **T2 增强** | 扫频测量全链路（输出+输入）；EQ 计算与导出；打印/PDF；多显示器 DPI；快捷��；Pro 多输入 | 未开始 |
 

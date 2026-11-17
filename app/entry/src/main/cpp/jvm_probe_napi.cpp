@@ -44,6 +44,11 @@ std::string ExecMemProbe() {
 std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     std::string out = ExecMemProbe();
 
+    JLOG("stage: dlopen shim");
+    void *shim = dlopen("libjdkshim.so", RTLD_NOW | RTLD_GLOBAL);
+    JLOG("stage: shim=%{public}s err=%{public}s", shim ? "ok" : "fail", shim ? "-" : dlerror());
+    void *symJcos = dlsym(RTLD_DEFAULT, "jcos");
+    JLOG("stage: dlsym jcos=%{public}s", symJcos ? "found" : "NOT FOUND");
     JLOG("stage: dlopen");
     void *lib = dlopen("libjvm.so", RTLD_NOW | RTLD_GLOBAL);
     JLOG("stage: dlopen done");
