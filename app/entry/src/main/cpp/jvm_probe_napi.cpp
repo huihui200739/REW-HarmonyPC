@@ -367,8 +367,10 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     jclass list = env->FindClass("java/util/ArrayList");
     out += std::string("FindClass(ArrayList)=") + (list ? "OK" : "FAIL") + "\n";
 
-    // --- Java2D 渲染自检：离屏画一张图并落盘，验证 libawt 的软件管线 ----
-    {
+    // --- Java2D 渲染自检：只跑一次（同一进程内多次会重复 createData） ---
+    static bool gJava2dTested = false;
+    if (!gJava2dTested) {
+        gJava2dTested = true;
         jclass biCls = env->FindClass("java/awt/image/BufferedImage");
         if (biCls) {
             jmethodID ctor = env->GetMethodID(biCls, "<init>", "(III)V");
