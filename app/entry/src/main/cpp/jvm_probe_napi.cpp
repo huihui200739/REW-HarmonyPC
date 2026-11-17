@@ -236,6 +236,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
         // 确保 initIDs 转发前库已加载（dlsym 需要符号在全局作用域）
         dlopen("libawt.so", RTLD_NOW | RTLD_GLOBAL);
         dlopen("libawt_headless.so", RTLD_NOW | RTLD_GLOBAL);
+        dlopen("libfontmanager.so", RTLD_NOW | RTLD_GLOBAL);
         int ok = 0, fail = 0, real = 0, stub = 0;
         jclass classClass = env->FindClass("java/lang/Class");
         jmethodID forNameMid = env->GetStaticMethodID(classClass, "forName",
