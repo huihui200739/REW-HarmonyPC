@@ -262,6 +262,19 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
         }
         JLOG("register: ok=%{public}d fail=%{public}d real=%{public}d stub=%{public}d", ok, fail, real, stub);
         {
+            // SunToolkit 的若干 native 方法无对应实现，给空实现避免启动崩溃
+            jclass stk = env->FindClass("sun/awt/SunToolkit");
+            if (!stk) { env->ExceptionClear(); }
+            else {
+                JNINativeMethod sm[] = {
+                    { const_cast<char *>("closeSplashScreen"), const_cast<char *>("()V"), (void *)EmptyInitIDs },
+                };
+                jint r2 = env->RegisterNatives(stk, sm, sizeof(sm) / sizeof(sm[0]));
+                JLOG("register SunToolkit ret=%{public}d", static_cast<int>(r2));
+                if (r2 != 0) env->ExceptionClear();
+            }
+        }
+        {
             jclass cms = (jclass)env->CallStaticObjectMethod(classClass, forNameMid,
                 env->NewStringUTF("sun.java2d.cmm.CMSManager"), JNI_FALSE, sysLoader);
             if (!cms) { env->ExceptionClear(); JLOG("CMSManager not found"); }
