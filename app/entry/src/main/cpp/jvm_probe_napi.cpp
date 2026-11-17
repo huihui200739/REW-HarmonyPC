@@ -2,6 +2,11 @@
 // 用于判定应用沙箱是否允许可执行内存（hdc shell 域已确认禁止）。
 #include <napi/native_api.h>
 #include <hilog/log.h>
+
+#undef LOG_DOMAIN
+#undef LOG_TAG
+#define LOG_DOMAIN 0x0000
+#define LOG_TAG "REWJVMN"
 #include <dlfcn.h>
 #include <jni.h>
 #include <string>
@@ -56,13 +61,23 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
 
     JavaVM *vm = nullptr;
     JNIEnv *env = nullptr;
-    JavaVMOption opts[4];
+    static char bufA[] = "-Xmx256m";
+    static char bufB[] = "-Xms16m";
+    static char bufC[] = "-XX:ReservedCodeCacheSize=64m";
+    static char bufD[] = "-XX:+UseSerialGC";
+    static char bufE[] = "-XX:-UsePerfData";
+    JavaVMOption opts[10];
     int n = 0;
     std::string homeOpt = "-Djava.home=" + javaHome;
     std::string tmpOpt = "-Djava.io.tmpdir=" + workDir;
     opts[n++].optionString = const_cast<char *>(homeOpt.c_str());
     opts[n++].optionString = const_cast<char *>(tmpOpt.c_str());
     opts[n++].optionString = const_cast<char *>("-Xint");
+    opts[n++].optionString = bufA;
+    opts[n++].optionString = bufB;
+    opts[n++].optionString = bufC;
+    opts[n++].optionString = bufD;
+    opts[n++].optionString = bufE;
 
     JavaVMInitArgs args;
     args.version = JNI_VERSION_1_8;
@@ -70,7 +85,12 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     args.options = opts;
     args.ignoreUnrecognized = JNI_TRUE;
 
-    JLOG("stage: JNI_CreateJavaVM begin");
+    setenv("ECLIPSE_EMBEDDED_JAVA_HOME", javaHome.c_str(), 1);
+    std::string errPath = workDir + "/jvm-stderr.log";
+    std::string outPath = workDir + "/jvm-stdout.log";
+    if (!freopen(errPath.c_str(), "w", stderr)) {}
+    if (!freopen(outPath.c_str(), "w", stdout)) {}
+    JLOG("stage: JNI_CreateJavaVM begin (stderr -> %{public}s)", errPath.c_str());
     jint rc = create(&vm, reinterpret_cast<void **>(&env), &args);
     JLOG("stage: JNI_CreateJavaVM rc=%{public}d", static_cast<int>(rc));
     if (rc != JNI_OK) {
@@ -108,6 +128,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
 }
 
 napi_value Probe(napi_env env, napi_callback_info info) {
+    OH_LOG_INFO(LOG_APP, "probe enter");
     size_t argc = 2;
     napi_value argv[2] = {nullptr, nullptr};
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
@@ -118,7 +139,9 @@ napi_value Probe(napi_env env, napi_callback_info info) {
     if (argc >= 1) napi_get_value_string_utf8(env, argv[0], home, sizeof home, &len);
     if (argc >= 2) napi_get_value_string_utf8(env, argv[1], work, sizeof work, &len);
 
+    OH_LOG_INFO(LOG_APP, "probe args home=%{public}s work=%{public}s", home, work);
     std::string result = RunJvm(home, work);
+    OH_LOG_INFO(LOG_APP, "probe done len=%{public}zu", result.size());
     napi_value out;
     napi_create_string_utf8(env, result.c_str(), result.size(), &out);
     return out;
