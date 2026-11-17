@@ -150,6 +150,13 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     JLOG("prop graphicsenv=%{public}s", propNow("java.awt.graphicsenv").c_str());
     JLOG("prop headless=%{public}s", propNow("java.awt.headless").c_str());
     JLOG("prop library.path=%{public}s", propNow("java.library.path").c_str());
+    {
+        std::string cpv = propNow("java.class.path");
+        JLOG("prop class.path.len=%{public}zu head=%{public}s", cpv.size(), cpv.substr(0, 220).c_str());
+        jclass tk = env->FindClass("ohos/awt/OhosToolkit");
+        JLOG("FindClass(ohos/awt/OhosToolkit)=%{public}s", tk ? "OK" : "FAIL");
+        if (!tk) { env->ExceptionDescribe(); env->ExceptionClear(); }
+    }
 
     auto prop = [&](const char *key) -> std::string {
         jclass sys = env->FindClass("java/lang/System");
