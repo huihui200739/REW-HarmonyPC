@@ -87,7 +87,11 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     static char bufC[] = "-XX:ReservedCodeCacheSize=64m";
     static char bufD[] = "-XX:+UseSerialGC";
     static char bufE[] = "-XX:-UsePerfData";
-    JavaVMOption opts[10];
+    static char bufF[] = "-Djava.awt.headless=false";
+    static char bufG[] = "-Dawt.toolkit=ohos.awt.OhosToolkit";
+    static char bufH[] = "-Djava.awt.graphicsenv=ohos.awt.OhosGraphicsEnvironment";
+    static char bufI[] = "--add-opens=java.desktop/java.awt=ALL-UNNAMED";
+    JavaVMOption opts[16];
     int n = 0;
     std::string homeOpt = "-Djava.home=" + javaHome;
     std::string tmpOpt = "-Djava.io.tmpdir=" + workDir;
@@ -102,6 +106,10 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     opts[n++].optionString = bufC;
     opts[n++].optionString = bufD;
     opts[n++].optionString = bufE;
+    opts[n++].optionString = bufF;
+    opts[n++].optionString = bufG;
+    opts[n++].optionString = bufH;
+    opts[n++].optionString = bufI;
 
     JavaVMInitArgs args;
     args.version = JNI_VERSION_1_8;
