@@ -367,6 +367,58 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     jclass list = env->FindClass("java/util/ArrayList");
     out += std::string("FindClass(ArrayList)=") + (list ? "OK" : "FAIL") + "\n";
 
+    // --- Java2D 渲染自检：离屏画一张图并落盘，验证 libawt 的软件管线 ----
+    {
+        jclass biCls = env->FindClass("java/awt/image/BufferedImage");
+        if (biCls) {
+            jmethodID ctor = env->GetMethodID(biCls, "<init>", "(III)V");
+            jobject img = env->NewObject(biCls, ctor, 400, 200, 1 /* TYPE_INT_RGB */);
+            jclass g2dCls = env->FindClass("java/awt/Graphics2D");
+            jmethodID createG = env->GetMethodID(biCls, "createGraphics", "()Ljava/awt/Graphics2D;");
+            jobject g = env->CallObjectMethod(img, createG);
+            if (g) {
+                jclass colorCls = env->FindClass("java/awt/Color");
+                jmethodID colorCtor = env->GetMethodID(colorCls, "<init>", "(III)V");
+                jobject white = env->NewObject(colorCls, colorCtor, 255, 255, 255);
+                jobject black = env->NewObject(colorCls, colorCtor, 0, 0, 0);
+                jmethodID setColor = env->GetMethodID(g2dCls, "setColor", "(Ljava/awt/Color;)V");
+                jmethodID fillRect = env->GetMethodID(g2dCls, "fillRect", "(IIII)V");
+                env->CallVoidMethod(g, setColor, white);
+                env->CallVoidMethod(g, fillRect, 0, 0, 400, 200);
+                env->CallVoidMethod(g, setColor, black);
+                env->CallVoidMethod(g, fillRect, 20, 20, 360, 4);
+                jclass fontCls = env->FindClass("java/awt/Font");
+                jmethodID fontCtor = env->GetMethodID(fontCls, "<init>", "(Ljava/lang/String;II)V");
+                jstring name = env->NewStringUTF("Dialog");
+                jobject font = env->NewObject(fontCls, fontCtor, name, 1, 24);
+                jmethodID setFont = env->GetMethodID(g2dCls, "setFont", "(Ljava/awt/Font;)V");
+                env->CallVoidMethod(g, setFont, font);
+                jmethodID drawStr = env->GetMethodID(g2dCls, "drawString", "(Ljava/lang/String;II)V");
+                jstring txt = env->NewStringUTF("REW on HarmonyOS - Java2D OK");
+                env->CallVoidMethod(g, drawStr, txt, 20, 100);
+                env->CallVoidMethod(g, env->GetMethodID(g2dCls, "dispose", "()V"));
+            }
+            if (env->ExceptionCheck()) {
+                out += "java2d-render-test: EXCEPTION\n";
+                env->ExceptionDescribe();
+                env->ExceptionClear();
+            } else {
+                jclass iio = env->FindClass("javax/imageio/ImageIO");
+                jmethodID write = env->GetStaticMethodID(iio, "write",
+                    "(Ljava/awt/image/RenderedImage;Ljava/lang/String;Ljava/io/File;)Z");
+                jclass fileCls = env->FindClass("java/io/File");
+                jmethodID fctor = env->GetMethodID(fileCls, "<init>", "(Ljava/lang/String;)V");
+                std::string path = workDir + "/java2d-test.png";
+                jstring jpath = env->NewStringUTF(path.c_str());
+                jobject jf = env->NewObject(fileCls, fctor, jpath);
+                jstring fmt = env->NewStringUTF("png");
+                jboolean ok = env->CallStaticBooleanMethod(iio, write, img, fmt, jf);
+                if (env->ExceptionCheck()) { env->ExceptionClear(); ok = JNI_FALSE; }
+                out += std::string("java2d-render-test: ") + (ok ? "OK " : "FAIL ") + path + "\n";
+            }
+        }
+    }
+
     env->ExceptionClear();
     jclass rew = env->FindClass("roomeqwizard/RoomEQ_Wizard");
     if (rew) {
