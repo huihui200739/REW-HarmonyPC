@@ -1,6 +1,6 @@
 {
-  "jdk": "openjdk-21 (Harmonybrew OHOS 补丁路线) / 回退 openjdk-8",
-  "target": "aarch64-linux-ohos (OpenHarmony 6.1.1.125 / API 24)",
+  "jdk": "BiSheng JDK 17 @ e366af4e (gitee openEuler)",
+  "target": "aarch64-linux-ohos24.0.0 (OpenHarmony 6.1.1.125 / API 24)",
   "upstream": {
     "name": "REW",
     "version": "5.31.3",
@@ -33,5 +33,7 @@
     "java.nio",
     "java.util.prefs"
   ],
-  "files": []
+  "files": [],
+  "boot_jdk": "Temurin 17.0.21",
+  "toolchain": "DevEco NDK clang 15.0.4 + OHOS musl sysroot"
 }

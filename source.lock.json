@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-17T16:15:45+00:00",
+  "entry_count": 3,
+  "patches": [
+    {
+      "file": "patches/jdk/0001-separate-macos-build-sysroot.patch",
+      "sha256": "1235a544e1f070c8734a3548b008e9bdbad20d00f647bcf94dbe7c85bc5d77b9"
+    },
+    {
+      "file": "patches/jdk/0002-add-minimal-ohos-configure-mode.patch",
+      "sha256": "afe6f9efd864aac4929759547e1ce69f90ae09f47d9d87bb8a6e6b350f25860b"
+    },
+    {
+      "file": "patches/jdk/0003-adapt-hotspot-to-ohos-libc.patch",
+      "sha256": "82aba77b51982029205b50944af29c7f0ad9897061119f9b73fd540d525bc395"
+    }
+  ]
+}

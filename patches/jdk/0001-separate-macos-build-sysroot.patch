@@ -1,0 +1,27 @@
+diff --git a/make/autoconf/basic.m4 b/make/autoconf/basic.m4
+index 08a547966..958077fcf 100644
+--- a/make/autoconf/basic.m4
++++ b/make/autoconf/basic.m4
+@@ -231,6 +231,14 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
+   )
+ 
+   if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
++    if test "x$COMPILE_TYPE" = "xcross"; then
++      AC_MSG_CHECKING([for build platform sysroot])
++      BUILD_SYSROOT=`/usr/bin/xcrun --sdk macosx --show-sdk-path 2>/dev/null`
++      AC_MSG_RESULT([$BUILD_SYSROOT])
++      if test ! -f "$BUILD_SYSROOT/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h"; then
++        AC_MSG_ERROR([Unable to find required framework headers in build platform sysroot])
++      fi
++    else
+     # If a devkit has been supplied, find xcodebuild in the toolchain_path.
+     # If not, detect if Xcode is installed by running xcodebuild -version
+     # if no Xcode installed, xcodebuild exits with 1
+@@ -302,6 +310,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
+     # set SDKROOT too, Xcode tools will pick it up
+     SDKROOT="$SYSROOT"
+     AC_SUBST(SDKROOT)
++    fi
+   fi
+ 
+   # Prepend the extra path to the global path

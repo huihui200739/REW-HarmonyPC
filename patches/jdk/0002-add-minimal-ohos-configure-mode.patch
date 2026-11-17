@@ -1,0 +1,55 @@
+diff --git a/make/autoconf/lib-freetype.m4 b/make/autoconf/lib-freetype.m4
+index 6a7109342..485c7f5cf 100644
+--- a/make/autoconf/lib-freetype.m4
++++ b/make/autoconf/lib-freetype.m4
+@@ -71,6 +71,11 @@ AC_DEFUN([LIB_CHECK_POTENTIAL_FREETYPE],
+ ################################################################################
+ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
+ [
++  if test "x$NEEDS_LIB_FREETYPE" = xfalse; then
++    FREETYPE_TO_USE=none
++    FREETYPE_CFLAGS=
++    FREETYPE_LIBS=
++  else
+   AC_ARG_WITH(freetype, [AS_HELP_STRING([--with-freetype],
+       [specify whether to use 'system' or 'bundled' freetype.
+        The selected option applies to both build time and run time.
+@@ -236,6 +241,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
+   fi
+ 
+   AC_MSG_RESULT([Using freetype: $FREETYPE_TO_USE])
++  fi
+ 
+   AC_SUBST(FREETYPE_TO_USE)
+   AC_SUBST(FREETYPE_CFLAGS)
+diff --git a/make/autoconf/libraries.m4 b/make/autoconf/libraries.m4
+index b6a261eef..4a2caccdf 100644
+--- a/make/autoconf/libraries.m4
++++ b/make/autoconf/libraries.m4
+@@ -39,6 +39,18 @@ m4_include([lib-tests.m4])
+ ################################################################################
+ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
+ [
++  AC_ARG_ENABLE([ohos-port], [AS_HELP_STRING([--enable-ohos-port],
++      [configure the minimal headless port for HarmonyOS])],
++      [ENABLE_OHOS_PORT=$enableval], [ENABLE_OHOS_PORT=false])
++  AC_SUBST(ENABLE_OHOS_PORT)
++
++  if test "x$ENABLE_OHOS_PORT" = xyes; then
++    NEEDS_LIB_X11=false
++    NEEDS_LIB_FONTCONFIG=false
++    NEEDS_LIB_CUPS=false
++    NEEDS_LIB_FREETYPE=false
++    NEEDS_LIB_ALSA=false
++  else
+   # Check if X11 is needed
+   if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
+     # No X11 support on windows or macosx
+@@ -80,6 +92,7 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
+   else
+     NEEDS_LIB_ALSA=false
+   fi
++  fi
+ 
+   # Check if ffi is needed
+   if HOTSPOT_CHECK_JVM_VARIANT(zero); then
