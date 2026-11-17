@@ -15,7 +15,7 @@ verify_artifact() {
   local desc
   desc="$(file -b "$LIBJVM")"
   echo "  $desc"
-  case "$desc" in *AArch64*) ;; *) echo "  不是 AArch64" >&2; return 1 ;; esac
+  case "$desc" in *aarch64*|*AArch64*) ;; *) echo "  不是 AArch64：$desc" >&2; return 1 ;; esac
   ( "$OHOS_NDK_ROOT/llvm/bin/llvm-nm" -D --defined-only "$LIBJVM" 2>/dev/null || nm -D "$LIBJVM" ) \
     | grep -q JNI_CreateJavaVM || { echo "  未导出 JNI_CreateJavaVM" >&2; return 1; }
   if ( "$OHOS_NDK_ROOT/llvm/bin/llvm-readelf" -s "$LIBJVM" 2>/dev/null | grep -q "GLIBC_" ); then
@@ -31,10 +31,9 @@ case "${1:-}" in
   --verify-artifact) verify_artifact; exit $? ;;
 esac
 
-JOBS_ARG="-j$JOBS"
-[[ "${1:-}" == "--jobs" ]] && JOBS_ARG="-j$2"
+[[ "${1:-}" == "--jobs" ]] && JOBS="$2"
 
 [[ -f "$CONFIG_DIR/spec.gmk" ]] || { echo "未 configure：先跑 jvm/configure-jdk.sh" >&2; exit 1; }
-echo "构建 hotspot-server-libs（$JOBS_ARG）…"
-( cd "$JDK_SOURCE_DIR" && make CONF="$CONF_NAME" "$JOBS_ARG" hotspot-server-libs )
+echo "构建 hotspot-server-libs（JOBS=${JOBS}）…"
+( cd "$JDK_SOURCE_DIR" && make CONF="$CONF_NAME" JOBS="$JOBS" hotspot-server-libs )
 verify_artifact

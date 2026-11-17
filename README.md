@@ -40,7 +40,7 @@
 
 | 级别 | 内容 | 状态 |
 |---|---|---|
-| **T0 基础** | OpenJDK 8 在 OHOS arm64 启动 `java -version`；REW jar 进入主循环并创建首帧 | 未开始 |
+| **T0 基础** | JVM 在 OHOS arm64 启动 `java -version`；REW jar 进入主循环并创建首帧 | 进行中：`libjvm.so` 已交叉编译产出（AArch64 / `JNI_CreateJavaVM` / 无 GLIBC 符号），设备加载待验 |
 | **T1 主要** | 主界面完整渲染（菜单/工具栏/图表区）；`.mdat` 读写；音频设备枚举；频率响应曲线绘制 | 未开始 |
 | **T2 增强** | 扫频测量全链路（输出+输入）；EQ 计算与导出；打印/PDF；多显示器 DPI；快捷��；Pro 多输入 | 未开始 |
 

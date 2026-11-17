@@ -17,9 +17,9 @@ for p in "$PATCH_DIR"/0*.patch; do
     echo "  应用 $name"
     applied=$((applied+1))
   elif git -C "$JDK_SOURCE_DIR" apply --reverse --check "$p" 2>/dev/null; then
-    echo "  已应用 $name（跳过）"
+    echo "  已应用 ${name}（跳过）"
   else
-    echo "  无法应用 $name（可能与源码冲突）" >&2
+    echo "  无法应用 ${name}（可能与源码冲突）" >&2
     exit 1
   fi
 done
