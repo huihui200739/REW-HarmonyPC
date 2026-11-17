@@ -11,6 +11,7 @@ rm -rf "$OUT" && mkdir -p "$OUT"
 "$BOOT_JDK/bin/javac" -source 17 -target 17 -nowarn \
   --add-exports java.desktop/sun.awt=ALL-UNNAMED \
   --add-exports java.desktop/java.awt.peer=ALL-UNNAMED \
+  --add-exports java.desktop/sun.java2d.cmm=ALL-UNNAMED \
   -d "$OUT" $(find "$SRC" -name '*.java')
 mkdir -p "$(dirname "$JAR")"
 ( cd "$OUT" && "$BOOT_JDK/bin/jar" cf "$JAR" . )
