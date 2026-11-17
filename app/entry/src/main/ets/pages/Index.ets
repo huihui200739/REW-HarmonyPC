@@ -21,12 +21,11 @@ struct Index {
       fs.mkdirSync(jarsDir, true);
     }
     // 已解压则跳过（以主 jar 存在为准）
-    if (!fs.accessSync(jarsDir + '/ohos-awt.jar')) {
-      const awtJar = await ctx.resourceManager.getRawFileContent('ohos-awt.jar');
-      const af = fs.openSync(jarsDir + '/ohos-awt.jar', fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE | fs.OpenMode.TRUNC);
-      fs.writeSync(af.fd, awtJar.buffer as ArrayBuffer);
-      fs.closeSync(af);
-    }
+    // 后端 jar 每次都覆盖，保证代码更新即时生效
+    const awtJar = await ctx.resourceManager.getRawFileContent('ohos-awt.jar');
+    const af = fs.openSync(jarsDir + '/ohos-awt.jar', fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE | fs.OpenMode.TRUNC);
+    fs.writeSync(af.fd, awtJar.buffer as ArrayBuffer);
+    fs.closeSync(af);
     if (fs.accessSync(jarsDir + '/RoomEQ_Wizard_obf.jar')) {
       return jarsDir;
     }

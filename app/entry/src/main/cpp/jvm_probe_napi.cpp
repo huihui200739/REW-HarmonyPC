@@ -91,8 +91,10 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     static char bufG[] = "-Dawt.toolkit=ohos.awt.OhosToolkit";
     static char bufH[] = "-Djava.awt.graphicsenv=ohos.awt.OhosGraphicsEnvironment";
     static char bufI[] = "--add-opens=java.desktop/java.awt=ALL-UNNAMED";
+    static char bufJ[] = "--add-exports=java.desktop/java.awt.peer=ALL-UNNAMED";
+    static char bufK[] = "--add-exports=java.desktop/sun.awt=ALL-UNNAMED";
     std::string homeDirOpt = "-Duser.home=" + workDir + "/home";
-    JavaVMOption opts[16];
+    JavaVMOption opts[20];
     int n = 0;
     std::string homeOpt = "-Djava.home=" + javaHome;
     std::string tmpOpt = "-Djava.io.tmpdir=" + workDir;
@@ -111,6 +113,8 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     opts[n++].optionString = bufG;
     opts[n++].optionString = bufH;
     opts[n++].optionString = bufI;
+    opts[n++].optionString = bufJ;
+    opts[n++].optionString = bufK;
     opts[n++].optionString = const_cast<char *>(homeDirOpt.c_str());
 
     JavaVMInitArgs args;
@@ -134,6 +138,22 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
         return out;
     }
     out += "JNI_CreateJavaVM: OK\n";
+    {
+        // 手动触发 libawt 的 JNI_OnLoad：JVM 通过 System.loadLibrary 加载时可能已在本进程映射，
+        // 不再执行注册函数，导致 Font/Graphics 等 initIDs 未注册。
+        void *libawt = dlopen("libawt.so", RTLD_NOW | RTLD_GLOBAL);
+        if (!libawt) {
+            JLOG("libawt dlopen FAIL: %{public}s", dlerror());
+        } else {
+            using OnLoadFn = jint (*)(JavaVM *, void *);
+            auto onload = reinterpret_cast<OnLoadFn>(dlsym(libawt, "JNI_OnLoad"));
+            JLOG("libawt JNI_OnLoad ptr=%{public}s", onload ? "found" : "missing");
+            if (onload) {
+                jint v = onload(vm, nullptr);
+                JLOG("libawt JNI_OnLoad ret=%{public}d", static_cast<int>(v));
+            }
+        }
+    }
     auto propNow = [&](const char *k) -> std::string {
         jclass sc = env->FindClass("java/lang/System");
         jmethodID m = env->GetStaticMethodID(sc, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");

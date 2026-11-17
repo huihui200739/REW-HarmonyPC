@@ -17,10 +17,14 @@ import java.io.File;
 import java.io.IOException;
 
 /** 最小 Toolkit：先让 AWT 在无 X11 的 OHOS 上完成初始化，绘制能力后续接入。 */
-public class OhosToolkit extends Toolkit {
+public class OhosToolkit extends Toolkit implements sun.awt.KeyboardFocusManagerPeerProvider {
     private static final Dimension SCREEN = new Dimension(1920, 1080);
     private static final int DPI = 160;
     private static final String[] FONTS = {"Dialog", "SansSerif", "Serif", "Monospaced"};
+
+    private final OhosKeyboardFocusManagerPeer kfmPeer = new OhosKeyboardFocusManagerPeer();
+
+    @Override public java.awt.peer.KeyboardFocusManagerPeer getKeyboardFocusManagerPeer() { return kfmPeer; }
 
     @Override public Dimension getScreenSize() { return SCREEN; }
     @Override public int getScreenResolution() { return DPI; }
