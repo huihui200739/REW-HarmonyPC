@@ -1,0 +1,35 @@
+diff --git a/make/modules/java.desktop/Lib.gmk b/make/modules/java.desktop/Lib.gmk
+index 22b07289a..1b7367620 100644
+--- a/make/modules/java.desktop/Lib.gmk
++++ b/make/modules/java.desktop/Lib.gmk
+@@ -41,6 +41,8 @@ include lib/Awt2dLibraries.gmk
+ # Create the libjsound library
+ 
+ ifeq ($(call isTargetOs, aix), false)
++  # OHOS: 没有 ALSA，Java Sound 后端在 P3 由 OHAudio 提供
++  ifeq ($(ENABLE_HEADLESS_ONLY), false)
+ 
+   LIBJSOUND_CFLAGS := \
+       $(ALSA_CFLAGS) \
+@@ -78,6 +80,7 @@ ifeq ($(call isTargetOs, aix), false)
+ 
+   TARGETS += $(BUILD_LIBJSOUND)
+ 
++  endif
+ endif
+ 
+ ################################################################################
+diff --git a/src/java.desktop/share/classes/sun/awt/im/InputContext.java b/src/java.desktop/share/classes/sun/awt/im/InputContext.java
+index bb955dc50..e0e174ff5 100644
+--- a/src/java.desktop/share/classes/sun/awt/im/InputContext.java
++++ b/src/java.desktop/share/classes/sun/awt/im/InputContext.java
+@@ -183,7 +183,8 @@ public class InputContext extends java.awt.im.InputContext
+         } else if (inputMethodLocator != null) {
+             return inputMethodLocator.getLocale();
+         } else {
+-            return null;
++            // OHOS: no input method subsystem - fall back to the default locale
++            return Locale.getDefault();
+         }
+     }
+ 
