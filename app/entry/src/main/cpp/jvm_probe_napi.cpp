@@ -91,6 +91,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     static char bufG[] = "-Dawt.toolkit=ohos.awt.OhosToolkit";
     static char bufH[] = "-Djava.awt.graphicsenv=ohos.awt.OhosGraphicsEnvironment";
     static char bufI[] = "--add-opens=java.desktop/java.awt=ALL-UNNAMED";
+    std::string homeDirOpt = "-Duser.home=" + workDir + "/home";
     JavaVMOption opts[16];
     int n = 0;
     std::string homeOpt = "-Djava.home=" + javaHome;
@@ -110,6 +111,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     opts[n++].optionString = bufG;
     opts[n++].optionString = bufH;
     opts[n++].optionString = bufI;
+    opts[n++].optionString = const_cast<char *>(homeDirOpt.c_str());
 
     JavaVMInitArgs args;
     args.version = JNI_VERSION_1_8;
@@ -132,6 +134,22 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
         return out;
     }
     out += "JNI_CreateJavaVM: OK\n";
+    auto propNow = [&](const char *k) -> std::string {
+        jclass sc = env->FindClass("java/lang/System");
+        jmethodID m = env->GetStaticMethodID(sc, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+        jstring kk = env->NewStringUTF(k);
+        auto v = static_cast<jstring>(env->CallStaticObjectMethod(sc, m, kk));
+        if (!v) return "<null>";
+        const char *s = env->GetStringUTFChars(v, nullptr);
+        std::string r = s ? s : "<null>";
+        env->ReleaseStringUTFChars(v, s);
+        return r;
+    };
+    JLOG("prop user.home=%{public}s", propNow("user.home").c_str());
+    JLOG("prop awt.toolkit=%{public}s", propNow("awt.toolkit").c_str());
+    JLOG("prop graphicsenv=%{public}s", propNow("java.awt.graphicsenv").c_str());
+    JLOG("prop headless=%{public}s", propNow("java.awt.headless").c_str());
+    JLOG("prop library.path=%{public}s", propNow("java.library.path").c_str());
 
     auto prop = [&](const char *key) -> std::string {
         jclass sys = env->FindClass("java/lang/System");
