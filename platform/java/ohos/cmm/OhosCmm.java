@@ -15,10 +15,24 @@ public class OhosCmm implements PCMM {
             System.err.println("[OHOS-CMM] returning " + (d == null ? "null" : d.length + " bytes"));
             return d;
         }
-        System.err.println("[OHOS-CMM] unknown profile type, returning empty");
-        return new byte[0];
+        System.err.println("[OHOS-CMM] unknown profile type, returning default header");
+        return OhosProfile.defaultHeader();
     }
-    @Override public byte[] getTagData(Profile p, int tagSignature) { return null; }
+    /** icSigHead = 'head'：ICC 头必须返回 128 字节，否则 getColorSpaceType 会 NPE。 */
+    private static final int IC_SIG_HEAD = 0x68656164;
+
+    @Override public byte[] getTagData(Profile p, int tagSignature) {
+        if (tagSignature == IC_SIG_HEAD) {
+            byte[] all = getProfileData(p);
+            if (all != null && all.length >= 128) {
+                byte[] head = new byte[128];
+                System.arraycopy(all, 0, head, 0, 128);
+                return head;
+            }
+            return OhosProfile.defaultHeader();
+        }
+        return null;
+    }
     @Override public void setTagData(Profile p, int tagSignature, byte[] data) { }
     @Override public ColorTransform createTransform(ICC_Profile profile, int renderType, int inFormatter) {
         return new OhosColorTransform(profile == null ? 3 : profile.getNumComponents(),
