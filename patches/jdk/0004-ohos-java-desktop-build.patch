@@ -1,0 +1,344 @@
+diff --git a/make/autoconf/basic.m4 b/make/autoconf/basic.m4
+index 08a547966..958077fcf 100644
+--- a/make/autoconf/basic.m4
++++ b/make/autoconf/basic.m4
+@@ -231,6 +231,14 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
+   )
+ 
+   if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
++    if test "x$COMPILE_TYPE" = "xcross"; then
++      AC_MSG_CHECKING([for build platform sysroot])
++      BUILD_SYSROOT=`/usr/bin/xcrun --sdk macosx --show-sdk-path 2>/dev/null`
++      AC_MSG_RESULT([$BUILD_SYSROOT])
++      if test ! -f "$BUILD_SYSROOT/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h"; then
++        AC_MSG_ERROR([Unable to find required framework headers in build platform sysroot])
++      fi
++    else
+     # If a devkit has been supplied, find xcodebuild in the toolchain_path.
+     # If not, detect if Xcode is installed by running xcodebuild -version
+     # if no Xcode installed, xcodebuild exits with 1
+@@ -302,6 +310,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
+     # set SDKROOT too, Xcode tools will pick it up
+     SDKROOT="$SYSROOT"
+     AC_SUBST(SDKROOT)
++    fi
+   fi
+ 
+   # Prepend the extra path to the global path
+diff --git a/make/autoconf/lib-freetype.m4 b/make/autoconf/lib-freetype.m4
+index 6a7109342..485c7f5cf 100644
+--- a/make/autoconf/lib-freetype.m4
++++ b/make/autoconf/lib-freetype.m4
+@@ -71,6 +71,11 @@ AC_DEFUN([LIB_CHECK_POTENTIAL_FREETYPE],
+ ################################################################################
+ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
+ [
++  if test "x$NEEDS_LIB_FREETYPE" = xfalse; then
++    FREETYPE_TO_USE=none
++    FREETYPE_CFLAGS=
++    FREETYPE_LIBS=
++  else
+   AC_ARG_WITH(freetype, [AS_HELP_STRING([--with-freetype],
+       [specify whether to use 'system' or 'bundled' freetype.
+        The selected option applies to both build time and run time.
+@@ -236,6 +241,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
+   fi
+ 
+   AC_MSG_RESULT([Using freetype: $FREETYPE_TO_USE])
++  fi
+ 
+   AC_SUBST(FREETYPE_TO_USE)
+   AC_SUBST(FREETYPE_CFLAGS)
+diff --git a/make/autoconf/libraries.m4 b/make/autoconf/libraries.m4
+index b6a261eef..4a2caccdf 100644
+--- a/make/autoconf/libraries.m4
++++ b/make/autoconf/libraries.m4
+@@ -39,6 +39,18 @@ m4_include([lib-tests.m4])
+ ################################################################################
+ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
+ [
++  AC_ARG_ENABLE([ohos-port], [AS_HELP_STRING([--enable-ohos-port],
++      [configure the minimal headless port for HarmonyOS])],
++      [ENABLE_OHOS_PORT=$enableval], [ENABLE_OHOS_PORT=false])
++  AC_SUBST(ENABLE_OHOS_PORT)
++
++  if test "x$ENABLE_OHOS_PORT" = xyes; then
++    NEEDS_LIB_X11=false
++    NEEDS_LIB_FONTCONFIG=false
++    NEEDS_LIB_CUPS=false
++    NEEDS_LIB_FREETYPE=false
++    NEEDS_LIB_ALSA=false
++  else
+   # Check if X11 is needed
+   if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
+     # No X11 support on windows or macosx
+@@ -80,6 +92,7 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
+   else
+     NEEDS_LIB_ALSA=false
+   fi
++  fi
+ 
+   # Check if ffi is needed
+   if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+diff --git a/make/modules/java.base/lib/CoreLibraries.gmk b/make/modules/java.base/lib/CoreLibraries.gmk
+index 99ecc66b7..f223788f6 100644
+--- a/make/modules/java.base/lib/CoreLibraries.gmk
++++ b/make/modules/java.base/lib/CoreLibraries.gmk
+@@ -100,7 +100,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
+         $(call SET_SHARED_LIBRARY_ORIGIN), \
+     LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
+     LDFLAGS_windows := -delayload:shell32.dll, \
+-    LIBS := $(BUILD_LIBFDLIBM_TARGET), \
++    LIBS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm.a, \
+     LIBS_unix := -ljvm, \
+     LIBS_linux := $(LIBDL), \
+     LIBS_aix := $(LIBDL) $(LIBM),\
+diff --git a/make/modules/java.desktop/Lib.gmk b/make/modules/java.desktop/Lib.gmk
+index 22b07289a..1b7367620 100644
+--- a/make/modules/java.desktop/Lib.gmk
++++ b/make/modules/java.desktop/Lib.gmk
+@@ -41,6 +41,8 @@ include lib/Awt2dLibraries.gmk
+ # Create the libjsound library
+ 
+ ifeq ($(call isTargetOs, aix), false)
++  # OHOS: 没有 ALSA，Java Sound 后端在 P3 由 OHAudio 提供
++  ifeq ($(ENABLE_HEADLESS_ONLY), false)
+ 
+   LIBJSOUND_CFLAGS := \
+       $(ALSA_CFLAGS) \
+@@ -78,6 +80,7 @@ ifeq ($(call isTargetOs, aix), false)
+ 
+   TARGETS += $(BUILD_LIBJSOUND)
+ 
++  endif
+ endif
+ 
+ ################################################################################
+diff --git a/make/modules/java.desktop/lib/Awt2dLibraries.gmk b/make/modules/java.desktop/lib/Awt2dLibraries.gmk
+index badb6f8ca..91532d356 100644
+--- a/make/modules/java.desktop/lib/Awt2dLibraries.gmk
++++ b/make/modules/java.desktop/lib/Awt2dLibraries.gmk
+@@ -369,7 +369,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
+       $(TOPDIR)/src/$(MODULE)/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
+       #
+ 
+-  LIBAWT_HEADLESS_EXCLUDES := medialib
++  LIBAWT_HEADLESS_EXCLUDES := medialib CUPSfuncs.c fontpath.c
+ 
+   LIBAWT_HEADLESS_EXTRA_HEADER_DIRS := \
+       $(LIBAWT_DEFAULT_HEADER_DIRS) \
+diff --git a/src/hotspot/cpu/aarch64/macroAssembler_aarch64.cpp b/src/hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
+index 3fb6faf2c..e65f3cf46 100644
+--- a/src/hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
++++ b/src/hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
+@@ -5379,12 +5379,16 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
+ // the call setup code.
+ //
+ // On Linux, aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+-// On other systems, the helper is a usual C function.
++// On OHOS and other systems, the helper is a usual C function.
+ //
+ void MacroAssembler::get_thread(Register dst) {
++#ifdef __OHOS__
++  RegSet saved_regs = RegSet::range(r0, r17) + lr - dst;
++#else
+   RegSet saved_regs =
+     LINUX_ONLY(RegSet::range(r0, r1)  + lr - dst)
+     NOT_LINUX (RegSet::range(r0, r17) + lr - dst);
++#endif
+ 
+   push(saved_regs, sp);
+ 
+diff --git a/src/hotspot/os/linux/os_linux.cpp b/src/hotspot/os/linux/os_linux.cpp
+index 12ee76416..ee2772ce0 100644
+--- a/src/hotspot/os/linux/os_linux.cpp
++++ b/src/hotspot/os/linux/os_linux.cpp
+@@ -122,9 +122,9 @@
+   #include <sched.h>
+ #endif
+ 
+-#if defined(AARCH64)
++#if defined(__GLIBC__) && defined(AARCH64)
+   __asm__(".symver fcntl64,fcntl@GLIBC_2.17");
+-#elif defined(AMD64)
++#elif defined(__GLIBC__) && defined(AMD64)
+   __asm__(".symver fcntl64,fcntl@GLIBC_2.2.5");
+ #endif
+ 
+@@ -141,7 +141,7 @@
+ // for timer info max values which include all bits
+ #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
+ 
+-#ifdef MUSL_LIBC
++#if defined(MUSL_LIBC) && !defined(__OHOS__)
+ // dlvsym is not a part of POSIX
+ // and musl libc doesn't implement it.
+ static void *dlvsym(void *handle,
+@@ -449,7 +449,16 @@ void os::init_system_properties_values() {
+   // sysclasspath, java_home, dll_dir
+   {
+     char *pslash;
++#ifdef __OHOS__
++    char ohos_dll_dir[MAXPATHLEN];
++    ohos_dll_dir[0] = '\0';
++#endif
++    buf[0] = '\0';
+     os::jvm_path(buf, bufsize);
++#ifdef __OHOS__
++    fprintf(stderr, "[OHOS HotSpot] jvm_path=%s\n", buf);
++    fflush(stderr);
++#endif
+ 
+     // Found the full path to libjvm.so.
+     // Now cut the path to <java_home>/jre if we can.
+@@ -457,6 +466,16 @@ void os::init_system_properties_values() {
+     if (pslash != NULL) {
+       *pslash = '\0';            // Get rid of /libjvm.so.
+     }
++#ifdef __OHOS__
++    jio_snprintf(ohos_dll_dir, sizeof(ohos_dll_dir), "%s", buf);
++    char* vm_variant = strrchr(ohos_dll_dir, '/');
++    if (vm_variant != NULL &&
++        (strcmp(vm_variant + 1, "server") == 0 ||
++         strcmp(vm_variant + 1, "client") == 0 ||
++         strcmp(vm_variant + 1, "hotspot") == 0)) {
++      *vm_variant = '\0';
++    }
++#endif
+     pslash = strrchr(buf, '/');
+     if (pslash != NULL) {
+       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
+@@ -469,7 +488,40 @@ void os::init_system_properties_values() {
+         *pslash = '\0';        // Get rid of /lib.
+       }
+     }
++#ifdef __OHOS__
++    const char* embedded_java_home = ::getenv("ECLIPSE_EMBEDDED_JAVA_HOME");
++    if (embedded_java_home != NULL && embedded_java_home[0] == '/' &&
++        strlen(embedded_java_home) < bufsize) {
++      char embedded_modules_path[MAXPATHLEN];
++      int embedded_modules_length = jio_snprintf(embedded_modules_path,
++          sizeof(embedded_modules_path), "%s/lib/modules", embedded_java_home);
++      struct stat embedded_modules_stat;
++      if (embedded_modules_length > 0 &&
++          (size_t)embedded_modules_length < sizeof(embedded_modules_path) &&
++          os::stat(embedded_modules_path, &embedded_modules_stat) == 0 &&
++          S_ISREG(embedded_modules_stat.st_mode)) {
++        jio_snprintf(buf, bufsize, "%s", embedded_java_home);
++        Arguments::set_dll_dir(ohos_dll_dir);
++        fprintf(stderr,
++                "[OHOS HotSpot] using embedded_java_home=%s dll_dir=%s\n",
++                buf, ohos_dll_dir);
++        fflush(stderr);
++      }
++    }
++#endif
+     Arguments::set_java_home(buf);
++#ifdef __OHOS__
++    char modules_path[MAXPATHLEN];
++    jio_snprintf(modules_path, sizeof(modules_path), "%s/lib/modules", buf);
++    struct stat modules_stat;
++    errno = 0;
++    int modules_result = os::stat(modules_path, &modules_stat);
++    int modules_errno = errno;
++    fprintf(stderr,
++            "[OHOS HotSpot] java_home=%s modules=%s stat=%d errno=%d\n",
++            buf, modules_path, modules_result, modules_errno);
++    fflush(stderr);
++#endif
+     if (!set_boot_path('/', ':')) {
+       vm_exit_during_initialization("Failed setting boot class path.", NULL);
+     }
+@@ -1914,6 +1966,10 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
+ }
+ 
+ const char* os::Linux::dll_path(void* lib) {
++#ifdef __OHOS__
++  (void)lib;
++  return NULL;
++#else
+   struct link_map *lmap;
+   const char* l_path = NULL;
+   assert(lib != NULL, "dll_path parameter must not be NULL");
+@@ -1923,6 +1979,7 @@ const char* os::Linux::dll_path(void* lib) {
+     l_path = lmap->l_name;
+   }
+   return l_path;
++#endif
+ }
+ 
+ static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = NULL) {
+diff --git a/src/hotspot/os/posix/os_posix.cpp b/src/hotspot/os/posix/os_posix.cpp
+index 1561f50fb..f63e2404f 100644
+--- a/src/hotspot/os/posix/os_posix.cpp
++++ b/src/hotspot/os/posix/os_posix.cpp
+@@ -440,6 +440,9 @@ void os::Posix::print_load_average(outputStream* st) {
+ // unfortunately it does not work on macOS and Linux because the utx chain has no entry
+ // for reboot at least on my test machines
+ void os::Posix::print_uptime_info(outputStream* st) {
++#ifdef __OHOS__
++  (void)st;
++#else
+   int bootsec = -1;
+   int currsec = time(NULL);
+   struct utmpx* ent;
+@@ -454,6 +457,7 @@ void os::Posix::print_uptime_info(outputStream* st) {
+   if (bootsec != -1) {
+     os::print_dhm(st, "OS uptime:", (long) (currsec-bootsec));
+   }
++#endif
+ }
+ 
+ static void print_rlimit(outputStream* st, const char* msg,
+diff --git a/src/hotspot/os_cpu/linux_aarch64/threadLS_linux_aarch64.S b/src/hotspot/os_cpu/linux_aarch64/threadLS_linux_aarch64.S
+index f541844b9..6be5f3df4 100644
+--- a/src/hotspot/os_cpu/linux_aarch64/threadLS_linux_aarch64.S
++++ b/src/hotspot/os_cpu/linux_aarch64/threadLS_linux_aarch64.S
+@@ -19,6 +19,7 @@
+ // or visit www.oracle.com if you need additional information or have any
+ // questions.
+ 
++#ifndef __OHOS__
+         // JavaThread::aarch64_get_thread_helper()
+         //
+         // Return the current thread pointer in x0.
+@@ -42,3 +43,4 @@ _ZN10JavaThread25aarch64_get_thread_helperEv:
+ 	ret
+ 
+ 	.size _ZN10JavaThread25aarch64_get_thread_helperEv, .-_ZN10JavaThread25aarch64_get_thread_helperEv
++#endif
+diff --git a/src/hotspot/os_cpu/linux_aarch64/thread_linux_aarch64.cpp b/src/hotspot/os_cpu/linux_aarch64/thread_linux_aarch64.cpp
+index 2cb62173e..cd836581c 100644
+--- a/src/hotspot/os_cpu/linux_aarch64/thread_linux_aarch64.cpp
++++ b/src/hotspot/os_cpu/linux_aarch64/thread_linux_aarch64.cpp
+@@ -37,6 +37,12 @@
+ 
+ #include <sys/file.h>
+ 
++#ifdef __OHOS__
++Thread* JavaThread::aarch64_get_thread_helper() {
++  return Thread::current();
++}
++#endif
++
+ frame JavaThread::pd_last_frame() {
+   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
+   return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+diff --git a/src/hotspot/share/opto/parse2.cpp b/src/hotspot/share/opto/parse2.cpp
+index 566aba9e8..8578cbf73 100644
+--- a/src/hotspot/share/opto/parse2.cpp
++++ b/src/hotspot/share/opto/parse2.cpp
+@@ -46,11 +46,11 @@
+ #include "runtime/deoptimization.hpp"
+ #include "runtime/sharedRuntime.hpp"
+ 
+-#ifdef AARCH64
++#if defined(__GLIBC__) && defined(AARCH64)
+   __asm__(".symver log2f,log2f@GLIBC_2.17");
+ #endif
+ 
+-#ifdef AMD64
++#if defined(__GLIBC__) && defined(AMD64)
+   __asm__(".symver log2f,log2f@GLIBC_2.2.5");
+ #endif
+ 

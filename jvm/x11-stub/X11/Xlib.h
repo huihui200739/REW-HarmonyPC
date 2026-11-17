@@ -26,6 +26,7 @@ typedef unsigned long Time;
 typedef unsigned long XID;
 typedef XID Drawable;
 typedef int Bool;
+typedef int Status;
 typedef unsigned char KeyCode;
 typedef unsigned long Mask;
 
@@ -89,7 +90,7 @@ typedef XID GLXWindow;
 typedef XID GLXPbuffer;
 typedef struct __GLXFBConfigRec *GLXFBConfig;
 typedef XID GLXFBConfigID;
-typedef void (*__GLXextFuncPtr)(void);
+/* __GLXextFuncPtr 由 JDK 自带的 J2D_GL/glx.h 定义 */
 typedef struct __GLXFBConfigRec GLXFBConfigRec;
 
 #define None 0L

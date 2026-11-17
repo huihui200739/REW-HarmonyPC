@@ -25,6 +25,10 @@ typedef struct {
     char *text;
     float width;
     float length;
+    float left;
+    float bottom;
+    float right;
+    float top;
 } ppd_size_t;
 
 typedef struct _ppd_file_s {
