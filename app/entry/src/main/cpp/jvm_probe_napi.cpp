@@ -244,6 +244,25 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             else { env->ExceptionClear(); JLOG("reg: RegisterNatives fail %{public}s", cn); fail++; }
         }
         JLOG("RegisterNatives initIDs ok=%{public}d fail=%{public}d", ok, fail);
+        {
+            jclass cms = (jclass)env->CallStaticObjectMethod(classClass, forNameMid,
+                env->NewStringUTF("sun.java2d.cmm.CMSManager"), JNI_FALSE, sysLoader);
+            if (!cms) { env->ExceptionClear(); JLOG("CMSManager not found"); }
+            else {
+                jmethodID gm = env->GetStaticMethodID(cms, "getModule", "()Lsun/java2d/cmm/PCMM;");
+                if (!gm) { env->ExceptionClear(); JLOG("getModule not found"); }
+                else {
+                    jobject mod = env->CallStaticObjectMethod(cms, gm);
+                    if (env->ExceptionCheck()) {
+                        JLOG("CMSManager.getModule threw");
+                        env->ExceptionDescribe();
+                        env->ExceptionClear();
+                    } else {
+                        JLOG("CMSManager.getModule ok=%{public}s", mod ? "module" : "null");
+                    }
+                }
+            }
+        }
     }
     {
         // 手动触发 libawt 的 JNI_OnLoad：JVM 通过 System.loadLibrary 加载时可能已在本进程映射，
@@ -258,16 +277,6 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             if (onload) {
                 jint v = onload(vm, nullptr);
                 JLOG("libawt JNI_OnLoad ret=%{public}d", static_cast<int>(v));
-            }
-        }
-        void *liblcms = dlopen("liblcms.so", RTLD_NOW | RTLD_GLOBAL);
-        if (liblcms) {
-            using OnLoadFn3 = jint (*)(JavaVM *, void *);
-            auto onload3 = reinterpret_cast<OnLoadFn3>(dlsym(liblcms, "JNI_OnLoad"));
-            if (onload3) {
-                JLOG("liblcms JNI_OnLoad ret=%{public}d", static_cast<int>(onload3(vm, nullptr)));
-            } else {
-                JLOG("liblcms JNI_OnLoad missing");
             }
         }
         void *libheadless = dlopen("libawt_headless.so", RTLD_NOW | RTLD_GLOBAL);
