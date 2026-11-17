@@ -1,0 +1,35 @@
+{
+  "upstream": {
+    "name": "REW",
+    "version": "5.31.3",
+    "installer": "REW_linux_no_jre_5_31_3.sh",
+    "size": 31882909,
+    "sha256": "a9a1a4295a22049d9459528032a6eea8d162e8519c6e533101b63085fffbd426"
+  },
+  "main_jar": {
+    "file": "RoomEQ_Wizard_obf.jar",
+    "main_class": "roomeqwizard.RoomEQ_Wizard",
+    "obfuscator": "yGuard 3.1.0",
+    "class_major": 52
+  },
+  "required_native": [
+    {
+      "lib": "libjffi",
+      "for": "jna-4.2.0",
+      "priority": "P1"
+    },
+    {
+      "lib": "libusb",
+      "for": "usb4java-1.2.0",
+      "priority": "P2"
+    }
+  ],
+  "java_api_surfaces": [
+    "java.awt",
+    "javax.swing",
+    "javax.sound.sampled",
+    "java.nio",
+    "java.util.prefs"
+  ],
+  "files": []
+}
