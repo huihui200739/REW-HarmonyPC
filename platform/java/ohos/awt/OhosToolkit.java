@@ -26,6 +26,28 @@ public class OhosToolkit extends Toolkit implements sun.awt.KeyboardFocusManager
 
     @Override public java.awt.peer.KeyboardFocusManagerPeer getKeyboardFocusManagerPeer() { return kfmPeer; }
 
+    // ---- 最小 Peer 工厂：先让组件树建立，绘制后续接入 ----
+    @Override public java.awt.peer.FramePeer createFrame(Frame t) { return Peers.make(java.awt.peer.FramePeer.class); }
+    @Override public java.awt.peer.WindowPeer createWindow(Window t) { return Peers.make(java.awt.peer.WindowPeer.class); }
+    @Override public java.awt.peer.DialogPeer createDialog(Dialog t) { return Peers.make(java.awt.peer.DialogPeer.class); }
+    @Override public java.awt.peer.FileDialogPeer createFileDialog(FileDialog t) { return Peers.make(java.awt.peer.FileDialogPeer.class); }
+    @Override public java.awt.peer.ButtonPeer createButton(Button t) { return Peers.make(java.awt.peer.ButtonPeer.class); }
+    @Override public java.awt.peer.LabelPeer createLabel(Label t) { return Peers.make(java.awt.peer.LabelPeer.class); }
+    @Override public java.awt.peer.TextFieldPeer createTextField(TextField t) { return Peers.make(java.awt.peer.TextFieldPeer.class); }
+    @Override public java.awt.peer.TextAreaPeer createTextArea(TextArea t) { return Peers.make(java.awt.peer.TextAreaPeer.class); }
+    @Override public java.awt.peer.PanelPeer createPanel(Panel t) { return Peers.make(java.awt.peer.PanelPeer.class); }
+    @Override public java.awt.peer.CanvasPeer createCanvas(Canvas t) { return Peers.make(java.awt.peer.CanvasPeer.class); }
+    @Override public java.awt.peer.ScrollPanePeer createScrollPane(ScrollPane t) { return Peers.make(java.awt.peer.ScrollPanePeer.class); }
+    @Override public java.awt.peer.ScrollbarPeer createScrollbar(Scrollbar t) { return Peers.make(java.awt.peer.ScrollbarPeer.class); }
+    @Override public java.awt.peer.CheckboxPeer createCheckbox(Checkbox t) { return Peers.make(java.awt.peer.CheckboxPeer.class); }
+    @Override public java.awt.peer.ChoicePeer createChoice(Choice t) { return Peers.make(java.awt.peer.ChoicePeer.class); }
+    @Override public java.awt.peer.ListPeer createList(List t) { return Peers.make(java.awt.peer.ListPeer.class); }
+    @Override public java.awt.peer.MenuBarPeer createMenuBar(MenuBar t) { return Peers.make(java.awt.peer.MenuBarPeer.class); }
+    @Override public java.awt.peer.MenuPeer createMenu(Menu t) { return Peers.make(java.awt.peer.MenuPeer.class); }
+    @Override public java.awt.peer.PopupMenuPeer createPopupMenu(PopupMenu t) { return Peers.make(java.awt.peer.PopupMenuPeer.class); }
+    @Override public java.awt.peer.MenuItemPeer createMenuItem(MenuItem t) { return Peers.make(java.awt.peer.MenuItemPeer.class); }
+    @Override public java.awt.peer.CheckboxMenuItemPeer createCheckboxMenuItem(CheckboxMenuItem t) { return Peers.make(java.awt.peer.CheckboxMenuItemPeer.class); }
+
     @Override public Dimension getScreenSize() { return SCREEN; }
     @Override public int getScreenResolution() { return DPI; }
     @Override public ColorModel getColorModel() { return ColorModel.getRGBdefault(); }

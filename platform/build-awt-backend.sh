@@ -8,7 +8,7 @@ OUT="$ROOT/build/awt-backend"
 JAR="$ROOT/app/entry/src/main/resources/rawfile/ohos-awt.jar"
 
 rm -rf "$OUT" && mkdir -p "$OUT"
-"$BOOT_JDK/bin/javac" -source 17 -target 17 -nowarn \
+"$BOOT_JDK/bin/javac" -nowarn \
   --add-exports java.desktop/sun.awt=ALL-UNNAMED \
   --add-exports java.desktop/java.awt.peer=ALL-UNNAMED \
   --add-exports java.desktop/sun.java2d.cmm=ALL-UNNAMED \
