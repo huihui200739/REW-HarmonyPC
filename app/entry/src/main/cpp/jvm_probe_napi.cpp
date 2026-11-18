@@ -452,8 +452,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
         } else {
             jclass strCls = env->FindClass("java/lang/String");
             jobjectArray emptyArgs = env->NewObjectArray(0, strCls, nullptr);
-            out += "invoking main()...
-";
+            out += "invoking main()...\n";
             {
                 jclass fcCls2 = env->FindClass("ohos/awt/FrameCapture");
                 JLOG("FrameCapture class=%{public}s", fcCls2 ? "found" : "missing");
@@ -475,14 +474,12 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
                     if (env->ExceptionCheck()) {
                         JLOG("FrameCapture threw");
                         env->ExceptionClear();
-                        out += "FrameCapture: EXCEPTION
-";
+                        out += "FrameCapture: EXCEPTION\n";
                     } else if (capRes) {
                         const char *cs = env->GetStringUTFChars(capRes, nullptr);
                         std::string r = cs ? cs : "?";
                         JLOG("FrameCapture result=%{public}s", r.c_str());
-                        out += "FrameCapture: " + r + "
-";
+                        out += "FrameCapture: " + r + "\n";
                         env->ReleaseStringUTFChars(capRes, cs);
                     }
                     env->CallStaticVoidMethod(rew, mainMid, emptyArgs);
