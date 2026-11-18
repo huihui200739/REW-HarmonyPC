@@ -47,21 +47,24 @@ public final class FrameCapture {
             BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             Graphics2D g = img.createGraphics();
             final int[] painted = {0};
+            final StringBuilder detail = new StringBuilder();
             EventQueue.invokeAndWait(() -> {
-                // NOTE: do not filter on isVisible(): our FramePeer is a stub and never
-                // flips that flag, but the component tree is fully built and paintable.
+                // NOTE: our FramePeer is a stub, so isVisible() is always false and
+                // setSize() only changes the Java-side fields - force a real size here.
                 for (Frame f : Frame.getFrames()) {
+                    detail.append("[").append(f.getTitle())
+                          .append(" ").append(f.getWidth()).append("x").append(f.getHeight())
+                          .append(" comps=").append(f.getComponentCount()).append("] ");
+                    f.setSize(width, height);
                     f.doLayout();
                     f.validate();
-                    g.translate(f.getX(), f.getY());
-                    f.paint(g);
-                    g.translate(-f.getX(), -f.getY());
+                    f.paintAll(g);
                     painted[0]++;
                 }
             });
             g.dispose();
             boolean ok = ImageIO.write(img, "png", new File(outPath));
-            log.append("painted=").append(painted[0]).append(" write=").append(ok);
+            log.append(detail).append("painted=").append(painted[0]).append(" write=").append(ok);
             return log.toString();
         } catch (Throwable e) {
             return "ERROR: " + e;
