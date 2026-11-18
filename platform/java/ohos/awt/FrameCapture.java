@@ -114,23 +114,9 @@ public final class FrameCapture {
             log.append("main started; ");
             Thread.sleep(waitMs);
 
-            // Do not click buttons on a modal dialog: doClick() sleeps and may re-enter
-            // invokeAndWait on the EDT, deadlocking the probe. Hiding is enough here.
-            final int[] closed = {0};
-            EventQueue.invokeLater(() -> {
-                for (java.awt.Window win : java.awt.Window.getWindows()) {
-                    if (win instanceof java.awt.Dialog) {
-                        try {
-                            win.setVisible(false);
-                            ((java.awt.Dialog) win).dispose();
-                            closed[0]++;
-                        } catch (Throwable ignored) {
-                        }
-                    }
-                }
-            });
-            Thread.sleep(4000);
-            log.append("dialogsHidden=").append(closed[0]).append("; ");
+            // NOTE: modal dialogs are left open on purpose; closing them
+            // deadlocks the EDT (SecondaryLoop waits for the modal pump).
+
             Thread.sleep(3000);
             Frame[] frames = Frame.getFrames();
             int visible = 0;
