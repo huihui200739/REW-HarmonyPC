@@ -29,3 +29,10 @@ __pycache__/
 local.properties
 .env
 *.log
+
+# 上游二进制与生成物（不入库：REW EULA 禁止分发；字体有许可限制）
+app/entry/src/main/resources/rawfile/rew-jars.zip
+app/entry/src/main/resources/rawfile/jre-runtime.zip
+app/entry/src/main/resources/rawfile/ohos-awt.jar
+app/entry/src/main/resources/rawfile/fonts/
+app/entry/libs/
