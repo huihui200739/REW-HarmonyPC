@@ -57,10 +57,14 @@ public final class FrameCapture {
             }
             Class<?> cls = Class.forName(mainClass, true, cl);
             Method main = cls.getMethod("main", String[].class);
+            final String[] mainError = {null};
             Thread t = new Thread(() -> {
                 try {
                     main.invoke(null, (Object) new String[0]);
-                } catch (Throwable ignored) {
+                } catch (Throwable e) {
+                    java.io.StringWriter sw = new java.io.StringWriter();
+                    e.printStackTrace(new java.io.PrintWriter(sw));
+                    mainError[0] = sw.toString();
                 }
             }, "REW-main");
             t.setDaemon(true);
@@ -116,6 +120,21 @@ public final class FrameCapture {
             } catch (Throwable ignored) {
             }
             log.append(detail).append("painted=").append(painted[0]).append(" write=").append(ok);
+            if (mainError[0] != null) {
+                log.append("MAIN-ERROR: ").append(mainError[0]).append("\n");
+            } else {
+                log.append("MAIN-OK(no exception)\n");
+            }
+            for (java.util.Map.Entry<Thread, StackTraceElement[]> en
+                    : Thread.getAllStackTraces().entrySet()) {
+                String nm = en.getKey().getName();
+                if (nm.contains("REW-main") || nm.startsWith("AWT-EventQueue")) {
+                    log.append("-- ").append(nm).append(" ").append(en.getKey().getState()).append("\n");
+                    for (StackTraceElement el : en.getValue()) {
+                        log.append("   at ").append(el).append("\n");
+                    }
+                }
+            }
             return log.toString();
         } catch (Throwable e) {
             return "ERROR: " + e;
