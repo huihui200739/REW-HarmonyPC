@@ -175,7 +175,7 @@ public final class FrameCapture {
                           .append(" comps=").append(f.getComponentCount())
                           .append(" valid=").append(f.isValid()).append("] ");
                     String clipDiag = "clip=" + g.getClipBounds();
-                    f.printAll(g);
+                    f.paint(g);
                     java.awt.image.BufferedImage probe2 = new java.awt.image.BufferedImage(
                             Math.max(1, f.getWidth()), Math.max(1, f.getHeight()),
                             java.awt.image.BufferedImage.TYPE_INT_RGB);
