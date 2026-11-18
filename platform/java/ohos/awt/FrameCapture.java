@@ -18,7 +18,11 @@ public final class FrameCapture {
     public static String runAndCapture(String mainClass, String outPath, int waitMs, int width, int height) {
         StringBuilder log = new StringBuilder();
         try {
-            Class<?> cls = Class.forName(mainClass);
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            if (cl == null) {
+                cl = ClassLoader.getSystemClassLoader();
+            }
+            Class<?> cls = Class.forName(mainClass, true, cl);
             Method main = cls.getMethod("main", String[].class);
             Thread t = new Thread(() -> {
                 try {
