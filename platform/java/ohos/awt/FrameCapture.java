@@ -15,6 +15,30 @@ import javax.imageio.ImageIO;
 public final class FrameCapture {
     private FrameCapture() {}
 
+    private static void dumpTree(java.awt.Component c, int depth, StringBuilder sb) {
+        if (depth > 3) {
+            return;
+        }
+        for (int i = 0; i < depth; i++) {
+            sb.append("  ");
+        }
+        sb.append(c.getClass().getName())
+          .append(" ").append(c.getWidth()).append("x").append(c.getHeight())
+          .append(" vis=").append(c.isVisible())
+          .append(" valid=").append(c.isValid())
+          .append("; ");
+        if (c instanceof java.awt.Container) {
+            java.awt.Component[] kids = ((java.awt.Container) c).getComponents();
+            sb.append("kids=").append(kids.length);
+            sb.append("\n");
+            for (java.awt.Component ch : kids) {
+                dumpTree(ch, depth + 1, sb);
+            }
+        } else {
+            sb.append("\n");
+        }
+    }
+
     public static String runAndCapture(String mainClass, String outPath, int waitMs, int width, int height) {
         StringBuilder log = new StringBuilder();
         try {
@@ -55,6 +79,14 @@ public final class FrameCapture {
                     f.setSize(width, height);
                     f.doLayout();
                     f.validate();
+                    java.awt.Container root = (f instanceof javax.swing.JFrame)
+                            ? ((javax.swing.JFrame) f).getContentPane() : f;
+                    if (root != null) {
+                        root.doLayout();
+                    }
+                    StringBuilder tree = new StringBuilder();
+                    dumpTree(f, 0, tree);
+                    detail.append("{").append(tree).append("}");
                     detail.append("[").append(f.getTitle())
                           .append(" ").append(f.getWidth()).append("x").append(f.getHeight())
                           .append(" comps=").append(f.getComponentCount())
