@@ -57,6 +57,26 @@ public final class FrameCapture {
         return n;
     }
 
+    private static void dumpTextComponents(java.awt.Component c, java.io.BufferedWriter w, int depth) throws java.io.IOException {
+        if (depth > 15) {
+            return;
+        }
+        if (c instanceof javax.swing.text.JTextComponent) {
+            String txt = ((javax.swing.text.JTextComponent) c).getText();
+            if (txt != null && !txt.isEmpty()) {
+                w.write("=== " + c.getClass().getName() + " len=" + txt.length());
+                w.newLine();
+                w.write(txt);
+                w.newLine();
+            }
+        }
+        if (c instanceof java.awt.Container) {
+            for (java.awt.Component ch : ((java.awt.Container) c).getComponents()) {
+                dumpTextComponents(ch, w, depth + 1);
+            }
+        }
+    }
+
     private static void makeTreeVisible(java.awt.Component c) {
         c.setVisible(true);
         if (c instanceof java.awt.Container) {
@@ -214,6 +234,19 @@ public final class FrameCapture {
                             w.write("   at " + el);
                             w.newLine();
                         }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+            try (java.io.BufferedWriter ew = java.nio.file.Files.newBufferedWriter(
+                    java.nio.file.Path.of(outPath + ".error.txt"),
+                    java.nio.charset.StandardCharsets.UTF_8)) {
+                for (java.awt.Window win : java.awt.Window.getWindows()) {
+                    if (win.getClass().getName().contains("ErrorDialog")
+                            || win instanceof java.awt.Dialog) {
+                        ew.write("### WINDOW " + win.getClass().getName());
+                        ew.newLine();
+                        dumpTextComponents(win, ew, 0);
                     }
                 }
             } catch (Throwable ignored) {
