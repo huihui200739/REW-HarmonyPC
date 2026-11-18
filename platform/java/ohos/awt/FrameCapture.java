@@ -135,6 +135,32 @@ public final class FrameCapture {
                     }
                 }
             }
+            try (java.io.BufferedWriter w = java.nio.file.Files.newBufferedWriter(
+                    java.nio.file.Path.of(outPath + ".stack.txt"),
+                    java.nio.charset.StandardCharsets.UTF_8)) {
+                if (mainError[0] != null) {
+                    w.write("MAIN-ERROR:");
+                    w.newLine();
+                    w.write(mainError[0]);
+                } else {
+                    w.write("MAIN-OK (no exception thrown yet)");
+                }
+                w.newLine();
+                for (java.util.Map.Entry<Thread, StackTraceElement[]> en
+                        : Thread.getAllStackTraces().entrySet()) {
+                    String nm = en.getKey().getName();
+                    if (nm.contains("REW-main") || nm.startsWith("AWT-EventQueue")
+                            || nm.startsWith("AWT-")) {
+                        w.write("-- " + nm + " " + en.getKey().getState());
+                        w.newLine();
+                        for (StackTraceElement el : en.getValue()) {
+                            w.write("   at " + el);
+                            w.newLine();
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
             return log.toString();
         } catch (Throwable e) {
             return "ERROR: " + e;
