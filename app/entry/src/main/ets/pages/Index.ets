@@ -4,6 +4,7 @@ import { fileIo as fs } from '@kit.CoreFileKit';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { image } from '@kit.ImageKit';
 
 @Entry
 @Component
@@ -11,6 +12,7 @@ struct Index {
   @State log: string = '就绪：启动后自动探测';
   @State busy: boolean = false;
   @State rewImage: string = '';
+  @State rewPixels: image.PixelMap | undefined = undefined;
   @State showImage: boolean = false;
 
   aboutToAppear(): void {
@@ -107,6 +109,24 @@ struct Index {
     }
   }
 
+
+  private async loadRewImage(ctx: common.UIAbilityContext): Promise<void> {
+    try {
+      const path = ctx.filesDir + '/rew-window.png';
+      const file = fs.openSync(path, fs.OpenMode.READ_ONLY);
+      const size = fs.statSync(path).size;
+      const buf = new ArrayBuffer(size);
+      fs.readSync(file.fd, buf);
+      fs.closeSync(file);
+      const source = image.createImageSource(buf);
+      this.rewPixels = await source.createPixelMap();
+      this.log = '界面图已加载: ' + size + ' bytes';
+    } catch (err) {
+      const be = err as BusinessError;
+      this.log = '加载界面图失败: ' + be.code + ' ' + be.message;
+    }
+  }
+
   build() {
     Column({ space: 12 }) {
       Text('REW · JVM 探针').fontSize(22).fontWeight(FontWeight.Bold)
@@ -118,7 +138,7 @@ struct Index {
               const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
               if (ctx) {
                 this.rewImage = ctx.filesDir + '/rew-window.png';
-                this.log = '界面图: ' + this.rewImage;
+                this.loadRewImage(ctx);
               }
             }
           })
@@ -126,8 +146,8 @@ struct Index {
       Button(this.busy ? '运行中…' : '重新探测')
         .enabled(!this.busy)
         .onClick(() => { this.run(); })
-      if (this.showImage && this.rewImage.length > 0) {
-        Image('file://' + this.rewImage)
+      if (this.showImage && this.rewPixels !== undefined) {
+        Image(this.rewPixels)
           .width('100%')
           .objectFit(ImageFit.Contain)
           .layoutWeight(1)
