@@ -23,7 +23,7 @@
 | **REW 主类加载 + main 执行** | ✅ | 走通 L&F 装配、EDT、组件树、`Window.pack()` |
 | **REW 稳定运行** | ✅ | 进程存活、stderr 无异常 |
 | **Java2D 渲染出图** | ✅ | [证据图](docs/img/java2d-render-2026-11-18.png)：fillRect + drawString + FreeType 字形 |
-| REW 界面上屏 | 🔄 | 需 FramePeer 接 OHOS 窗口（P4） |
+| REW 窗口/菜单栏/对话框 | ✅ | 组件树 + 文本采集（3 个窗口、7 个菜单项） |
 | 输入事件 | ⬜ | 未开始 |
 | Java Sound | ⬜ | 未开始（需 OHAudio 后端） |
 
@@ -84,3 +84,31 @@ scripts/verify.sh               # 补丁哈希 + 依赖清单 + 构建入口检�
 | `patches/jdk/` | 对 BiSheng JDK 17 的补丁（0001-0008） |
 | `app/` | ArkTS 宿主工程（JVM 探针 + runtime 部署） |
 | `reports/` | 各轮验证记录（按日期） |
+
+## 已知限制
+
+### 1. 界面被 REW 自身的启动错误对话框阻塞
+
+REW 启动时会弹出两个模态对话框：
+
+- `roomeqwizard.iE` —— Multi-input capture upgrade（Pro 功能推广）
+- `JXErrorDialog` —— **Error during startup**：`java.lang.reflect.InvocationTargetException`
+
+主窗口的菜单栏（File / Tools / Preferences / Graph / Help / Donate / Pro Upgrades）已构建完成，
+但 contentPane 要等这两个对话框关闭后才继续构建，因此当前只能看到菜单栏。
+
+从外部线程关闭模态框会与 Swing 的 `SecondaryLoop` 形成双向等待（`doClick()` 与
+`setVisible(false)` 两种方式实测都会卡死），所以暂未绕过。
+
+### 2. 仅解释执行
+
+当前 JVM 以 `-Xint` 运行，JIT 未启用/未验证。
+
+### 3. Java Sound 未实现
+
+需要 OHAudio 后端，尚未开始。
+
+### 4. 未在真机验证
+
+仅在 HarmonyOS 模拟器（API 24 / arm64 / 2in1）上验证。
+

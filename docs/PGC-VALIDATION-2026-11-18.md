@@ -42,3 +42,12 @@
 
 **T0 达成**：JVM 可用、REW 能启动并稳定运行。
 **T1 部分**：图形管线（Java2D）已通，但界面未上屏，因此"能用的 REW"尚未成立。
+
+## 补充（2026-11-18 晚）
+
+| # | 项目 | 结果 |
+|---|---|---|
+| 11 | REW 窗口数量 | ✅ 3 个（含主窗口 REW V5.31.3） |
+| 12 | REW 菜单栏 | ✅ 7 项 |
+| 13 | 界面完整渲染 | ⚠️ 被 REW 自身启动错误对话框（模态）阻塞 |
+| 14 | 启动错误 | java.lang.reflect.InvocationTargetException occurred during startup |
