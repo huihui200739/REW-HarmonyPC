@@ -37,6 +37,26 @@ public final class FrameCapture {
         }
     }
 
+    private static int clickClose(java.awt.Component c, int depth) {
+        if (depth > 12) {
+            return 0;
+        }
+        int n = 0;
+        if (c instanceof javax.swing.AbstractButton) {
+            String t = ((javax.swing.AbstractButton) c).getText();
+            if (t != null && (t.contains("Close") || t.equals("OK") || t.contains("Dismiss"))) {
+                ((javax.swing.AbstractButton) c).doClick(10);
+                n++;
+            }
+        }
+        if (c instanceof java.awt.Container) {
+            for (java.awt.Component ch : ((java.awt.Container) c).getComponents()) {
+                n += clickClose(ch, depth + 1);
+            }
+        }
+        return n;
+    }
+
     private static void makeTreeVisible(java.awt.Component c) {
         c.setVisible(true);
         if (c instanceof java.awt.Container) {
@@ -94,6 +114,16 @@ public final class FrameCapture {
             log.append("main started; ");
             Thread.sleep(waitMs);
 
+            final int[] closed = {0};
+            EventQueue.invokeAndWait(() -> {
+                for (java.awt.Window win : java.awt.Window.getWindows()) {
+                    if (win instanceof java.awt.Dialog) {
+                        closed[0] += clickClose(win, 0);
+                    }
+                }
+            });
+            log.append("dialogsClosed=").append(closed[0]).append("; ");
+            Thread.sleep(3000);
             Frame[] frames = Frame.getFrames();
             int visible = 0;
             for (Frame f : frames) {
