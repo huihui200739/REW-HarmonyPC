@@ -12,6 +12,18 @@
 | 适配路线 | 运行时移植（JVM → AWT/Java2D → Java Sound），非重写 |
 | 当前状态 | **P1/P2 完成，P3(Java2D) 渲染打通，P4(上屏) 进行中** |
 
+## 文档导航
+
+| 文档 | 用途 |
+|---|---|
+| **[QUICKSTART.md](docs/QUICKSTART.md)** | **从零复现：clone -> 构建 -> 上屏（含 8 条常见问题）** |
+| [DELIVERY.md](DELIVERY.md) | 交付说明：成果、未完成项、许可 |
+| [docs/PGC-VALIDATION-2026-11-18.md](docs/PGC-VALIDATION-2026-11-18.md) | PGC 验证记录（14 项） |
+| [docs/ONSCREEN-DESIGN.md](docs/ONSCREEN-DESIGN.md) | XComponent 上屏方案设计 |
+| [docs/SIDELOAD-PACKAGE.md](docs/SIDELOAD-PACKAGE.md) | 侧载投稿清单（SHA256、表单填法） |
+| [docs/FACTS-2026-11-18.md](docs/FACTS-2026-11-18.md) | 上游事实核查 |
+| reports/ | 107 份逐轮验证记录 |
+
 ## 当前进展（有实测证据）
 
 | 能力 | 状态 | 证据 |
