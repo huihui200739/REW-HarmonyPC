@@ -97,6 +97,11 @@ public final class FrameCapture {
             });
             g.dispose();
             boolean ok = ImageIO.write(img, "png", new File(outPath));
+            try {
+                java.nio.file.Files.writeString(java.nio.file.Path.of(outPath + ".tree.txt"),
+                        detail.toString(), java.nio.charset.StandardCharsets.UTF_8);
+            } catch (Throwable ignored) {
+            }
             log.append(detail).append("painted=").append(painted[0]).append(" write=").append(ok);
             return log.toString();
         } catch (Throwable e) {
