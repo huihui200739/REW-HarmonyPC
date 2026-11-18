@@ -15,6 +15,28 @@ import javax.imageio.ImageIO;
 public final class FrameCapture {
     private FrameCapture() {}
 
+    private static void collectText(java.awt.Component c, StringBuilder sb, int depth) {
+        if (depth > 12) {
+            return;
+        }
+        String txt = null;
+        if (c instanceof javax.swing.JLabel) {
+            txt = ((javax.swing.JLabel) c).getText();
+        } else if (c instanceof javax.swing.AbstractButton) {
+            txt = ((javax.swing.AbstractButton) c).getText();
+        } else if (c instanceof javax.swing.text.JTextComponent) {
+            txt = ((javax.swing.text.JTextComponent) c).getText();
+        }
+        if (txt != null && !txt.isEmpty()) {
+            sb.append(txt).append(" | ");
+        }
+        if (c instanceof java.awt.Container) {
+            for (java.awt.Component ch : ((java.awt.Container) c).getComponents()) {
+                collectText(ch, sb, depth + 1);
+            }
+        }
+    }
+
     private static void makeTreeVisible(java.awt.Component c) {
         c.setVisible(true);
         if (c instanceof java.awt.Container) {
@@ -144,6 +166,17 @@ public final class FrameCapture {
                     w.write(mainError[0]);
                 } else {
                     w.write("MAIN-OK (no exception thrown yet)");
+                w.newLine();
+                StringBuilder dlgText = new StringBuilder();
+                for (java.awt.Window win : java.awt.Window.getWindows()) {
+                    dlgText.append("[WINDOW ").append(win.getClass().getName())
+                           .append(" title=").append(win instanceof java.awt.Dialog
+                                   ? ((java.awt.Dialog) win).getTitle() : "")
+                           .append("] ");
+                    collectText(win, dlgText, 0);
+                    dlgText.append("\n");
+                }
+                w.write(dlgText.toString());
                 }
                 w.newLine();
                 for (java.util.Map.Entry<Thread, StackTraceElement[]> en
