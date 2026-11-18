@@ -174,7 +174,28 @@ public final class FrameCapture {
                           .append(" ").append(f.getWidth()).append("x").append(f.getHeight())
                           .append(" comps=").append(f.getComponentCount())
                           .append(" valid=").append(f.isValid()).append("] ");
+                    String clipDiag = "clip=" + g.getClipBounds();
                     f.printAll(g);
+                    java.awt.image.BufferedImage probe2 = new java.awt.image.BufferedImage(
+                            Math.max(1, f.getWidth()), Math.max(1, f.getHeight()),
+                            java.awt.image.BufferedImage.TYPE_INT_RGB);
+                    java.awt.Graphics2D pg = probe2.createGraphics();
+                    pg.setColor(java.awt.Color.MAGENTA);
+                    pg.fillRect(0, 0, probe2.getWidth(), probe2.getHeight());
+                    pg.setColor(java.awt.Color.BLACK);
+                    java.awt.Component root2 = (f instanceof javax.swing.JFrame)
+                            ? ((javax.swing.JFrame) f).getContentPane() : f;
+                    root2.paint(pg);
+                    int nonMagenta = 0;
+                    for (int yy = 0; yy < probe2.getHeight(); yy += 7) {
+                        for (int xx = 0; xx < probe2.getWidth(); xx += 7) {
+                            if ((probe2.getRGB(xx, yy) & 0xFFFFFF) != 0xFF00FF) {
+                                nonMagenta++;
+                            }
+                        }
+                    }
+                    detail.append("[").append(clipDiag)
+                          .append(" nonMag=").append(nonMagenta).append("] ");
                     painted[0]++;
                 }
             });
