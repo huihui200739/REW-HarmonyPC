@@ -5,7 +5,6 @@ import sun.java2d.cmm.ColorTransform;
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.Profile;
 
-/** identity CMM：不依赖 lcms native，profile 数据直通。 */
 public class OhosCmm implements PCMM {
     @Override public Profile loadProfile(byte[] data) { return new OhosProfile(data); }
     @Override public byte[] getProfileData(Profile p) {
@@ -15,10 +14,9 @@ public class OhosCmm implements PCMM {
             System.err.println("[OHOS-CMM] returning " + (d == null ? "null" : d.length + " bytes"));
             return d;
         }
-        System.err.println("[OHOS-CMM] unknown profile type, returning default header");
-        return OhosProfile.defaultHeader();
+        System.err.println("[OHOS-CMM] unknown profile type, returning sRGB profile");
+        return new OhosProfile().getData();
     }
-    /** icSigHead = 'head'：ICC 头必须返回 128 字节，否则 getColorSpaceType 会 NPE。 */
     private static final int IC_SIG_HEAD = 0x68656164;
 
     @Override public byte[] getTagData(Profile p, int tagSignature) {
@@ -29,7 +27,7 @@ public class OhosCmm implements PCMM {
                 System.arraycopy(all, 0, head, 0, 128);
                 return head;
             }
-            return OhosProfile.defaultHeader();
+            return new OhosProfile().getData();
         }
         return null;
     }

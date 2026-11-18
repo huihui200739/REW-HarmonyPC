@@ -1,16 +1,17 @@
 package ohos.cmm;
 
-import java.awt.color.ColorSpace;
-import java.awt.color.ICC_Profile;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * A complete minimal sRGB ICC v2 profile implemented in pure Java.
- * ICC_ColorSpace.toRGB() needs real rXYZ/gXYZ/bXYZ and rTRC/gTRC/bTRC tags;
- * a header-only profile makes it throw ArrayIndexOutOfBoundsException.
+ *
+ * <p>{@code sun.java2d.cmm.Profile} is a concrete class that only wraps a native pointer, so this
+ * subclass passes 0 and keeps the profile bytes on the Java side. {@link OhosCmm} serves those
+ * bytes to the JDK, which lets {@code ICC_ColorSpace.toRGB()} find the rXYZ/gXYZ/bXYZ and
+ * rTRC/gTRC/bTRC tags it needs.</p>
  */
-public class OhosProfile extends ICC_Profile {
+public class OhosProfile extends sun.java2d.cmm.Profile {
 
     private static final int TAG_desc = 0x64657363;
     private static final int TAG_cprt = 0x63707274;
@@ -30,29 +31,48 @@ public class OhosProfile extends ICC_Profile {
     private static final double[] G_XYZ = { 0.3851, 0.7169, 0.0971 };
     private static final double[] B_XYZ = { 0.1431, 0.0606, 0.7141 };
 
-    private final Map<Integer, byte[]> tags = new HashMap<>();
+    private static final Map<Integer, byte[]> SHARED = buildTags();
+    private static final byte[] SHARED_DATA = assemble(SHARED);
+
     private final byte[] data;
 
     public OhosProfile() {
-        tags.put(TAG_wtpt, xyz(D50_X, D50_Y, D50_Z));
-        tags.put(TAG_rXYZ, xyz(R_XYZ[0], R_XYZ[1], R_XYZ[2]));
-        tags.put(TAG_gXYZ, xyz(G_XYZ[0], G_XYZ[1], G_XYZ[2]));
-        tags.put(TAG_bXYZ, xyz(B_XYZ[0], B_XYZ[1], B_XYZ[2]));
+        super(0L);
+        this.data = SHARED_DATA;
+    }
+
+    public OhosProfile(byte[] raw) {
+        super(0L);
+        this.data = raw == null ? SHARED_DATA : raw;
+    }
+
+    public byte[] getData() {
+        return data.clone();
+    }
+
+    public byte[] getTag(int sig) {
+        byte[] v = SHARED.get(sig);
+        return v == null ? null : v.clone();
+    }
+
+    private static Map<Integer, byte[]> buildTags() {
+        Map<Integer, byte[]> m = new HashMap<>();
+        m.put(TAG_wtpt, xyz(D50_X, D50_Y, D50_Z));
+        m.put(TAG_rXYZ, xyz(R_XYZ[0], R_XYZ[1], R_XYZ[2]));
+        m.put(TAG_gXYZ, xyz(G_XYZ[0], G_XYZ[1], G_XYZ[2]));
+        m.put(TAG_bXYZ, xyz(B_XYZ[0], B_XYZ[1], B_XYZ[2]));
         byte[] trc = gammaCurve(2.2);
-        tags.put(TAG_rTRC, trc);
-        tags.put(TAG_gTRC, trc);
-        tags.put(TAG_bTRC, trc);
-        tags.put(TAG_desc, textDescription("sRGB"));
-        tags.put(TAG_cprt, textDescription("No copyright, use freely"));
-        data = build();
+        m.put(TAG_rTRC, trc);
+        m.put(TAG_gTRC, trc);
+        m.put(TAG_bTRC, trc);
+        m.put(TAG_desc, text("sRGB"));
+        m.put(TAG_cprt, text("No copyright, use freely"));
+        return m;
     }
 
     private static byte[] xyz(double x, double y, double z) {
         byte[] b = new byte[20];
-        b[0] = 'X';
-        b[1] = 'Y';
-        b[2] = 'Z';
-        b[3] = ' ';
+        b[0] = 'X'; b[1] = 'Y'; b[2] = 'Z'; b[3] = ' ';
         putFixed(b, 8, x);
         putFixed(b, 12, y);
         putFixed(b, 16, z);
@@ -68,27 +88,18 @@ public class OhosProfile extends ICC_Profile {
     }
 
     private static byte[] gammaCurve(double gamma) {
-        // curveType: 'curv', reserved, count=1, u8Fixed8 value
         byte[] b = new byte[14];
-        b[0] = 'c';
-        b[1] = 'u';
-        b[2] = 'r';
-        b[3] = 'v';
+        b[0] = 'c'; b[1] = 'u'; b[2] = 'r'; b[3] = 'v';
         int v = (int) Math.round(gamma * 256.0);
         b[10] = (byte) (v >>> 8);
         b[11] = (byte) v;
         return b;
     }
 
-    private static byte[] textDescription(String s) {
-        // 'desc' type with ASCII string (enough for our use)
+    private static byte[] text(String s) {
         byte[] body = s.getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        int len = 12 + body.length + 1 + 79;
-        byte[] b = new byte[len];
-        b[0] = 'd';
-        b[1] = 'e';
-        b[2] = 's';
-        b[3] = 'c';
+        byte[] b = new byte[12 + body.length + 1 + 79];
+        b[0] = 'd'; b[1] = 'e'; b[2] = 's'; b[3] = 'c';
         b[8] = (byte) (body.length >>> 24);
         b[9] = (byte) (body.length >>> 16);
         b[10] = (byte) (body.length >>> 8);
@@ -97,7 +108,7 @@ public class OhosProfile extends ICC_Profile {
         return b;
     }
 
-    private byte[] build() {
+    private static byte[] assemble(Map<Integer, byte[]> tags) {
         int tagCount = tags.size();
         int tableSize = 4 + tagCount * 12;
         int total = 128 + tableSize;
@@ -105,22 +116,19 @@ public class OhosProfile extends ICC_Profile {
             total += (v.length + 3) & ~3;
         }
         byte[] out = new byte[total];
-        // header
         out[0] = (byte) (total >>> 24);
         out[1] = (byte) (total >>> 16);
         out[2] = (byte) (total >>> 8);
         out[3] = (byte) total;
-        out[8] = 0x02;            // version 2.1.0
+        out[8] = 0x02;
         out[9] = 0x10;
         out[12] = 'm'; out[13] = 'n'; out[14] = 't'; out[15] = 'r';
         out[16] = 'R'; out[17] = 'G'; out[18] = 'B'; out[19] = ' ';
         out[20] = 'X'; out[21] = 'Y'; out[22] = 'Z'; out[23] = ' ';
         out[36] = 'a'; out[37] = 'c'; out[38] = 's'; out[39] = 'p';
-        // illuminant D50
         putFixed(out, 68, D50_X);
         putFixed(out, 72, D50_Y);
         putFixed(out, 76, D50_Z);
-        // tag table
         out[128] = (byte) (tagCount >>> 24);
         out[129] = (byte) (tagCount >>> 16);
         out[130] = (byte) (tagCount >>> 8);
@@ -149,17 +157,4 @@ public class OhosProfile extends ICC_Profile {
         }
         return out;
     }
-
-    @Override public byte[] getData() { return data.clone(); }
-    @Override public byte[] getData(int tag) {
-        byte[] v = tags.get(tag);
-        return v == null ? null : v.clone();
-    }
-    @Override public byte[] getTagData(int tagSignature) { return getData(tagSignature); }
-    @Override public int getNumComponents() { return 3; }
-    @Override public int getColorSpaceType() { return ColorSpace.TYPE_RGB; }
-    @Override public int getPCSType() { return ColorSpace.TYPE_XYZ; }
-    @Override public int getMajorVersion() { return 2; }
-    @Override public int getMinorVersion() { return 1; }
-    @Override public Object getProfileClass() { return null; }
 }
