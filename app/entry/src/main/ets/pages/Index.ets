@@ -13,7 +13,7 @@ struct Index {
   @State busy: boolean = false;
   @State rewImage: string = '';
   @State rewPixels: image.PixelMap | undefined = undefined;
-  @State showImage: boolean = false;
+  @State showImage: boolean = true;  // autoShow
 
   aboutToAppear(): void {
     this.run();
@@ -104,6 +104,11 @@ struct Index {
       const be = err as BusinessError;
       hilog.error(0x0000, 'REWJVM', 'ERROR %{public}d %{public}s', be.code, be.message);
       this.log = 'ERROR: ' + be.code + ' ' + be.message;
+      // probe 完成后把渲染结果读进来（autoShow）
+      const ctx2 = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      if (ctx2) {
+        await this.loadRewImage(ctx2);
+      }
     } finally {
       this.busy = false;
     }
