@@ -10,7 +10,7 @@
 | 运行时 | 官方要求 Java 8；本项目实测 **OpenJDK 17** 可加载（class major 52），走 JDK 17 |
 | 目标平台 | OpenHarmony 6.1.1.125 / API 24，arm64，deviceType 2in1 |
 | 适配路线 | 运行时移植（JVM → AWT/Java2D → Java Sound），非重写 |
-| 当前状态 | **P1/P2 完成，P3(Java2D) 渲染打通，P4(上屏) 进行中** |
+| 当前状态 | **P1–P5 完成**：JVM 运行、AWT/Swing 后端、Java2D 渲染、XComponent 上屏、系统集成（FileDialog／剪贴板／打印／输入法）与 OHAudio 音频后端；未覆盖物理声卡实测、真机与长稳 |
 
 ## 文档导航
 
