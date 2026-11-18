@@ -16,7 +16,6 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 
-/** 最小 Toolkit：先让 AWT 在无 X11 的 OHOS 上完成初始化，绘制能力后续接入。 */
 public class OhosToolkit extends Toolkit implements sun.awt.KeyboardFocusManagerPeerProvider {
     private static final Dimension SCREEN = new Dimension(1920, 1080);
     private static final int DPI = 160;
@@ -26,7 +25,6 @@ public class OhosToolkit extends Toolkit implements sun.awt.KeyboardFocusManager
 
     @Override public java.awt.peer.KeyboardFocusManagerPeer getKeyboardFocusManagerPeer() { return kfmPeer; }
 
-    // ---- 最小 Peer 工厂：先让组件树建立，绘制后续接入 ----
     @Override public java.awt.peer.FramePeer createFrame(Frame t) { return Peers.make(java.awt.peer.FramePeer.class); }
     @Override public java.awt.peer.WindowPeer createWindow(Window t) { return Peers.make(java.awt.peer.WindowPeer.class); }
     @Override public java.awt.peer.DialogPeer createDialog(Dialog t) { return Peers.make(java.awt.peer.DialogPeer.class); }
@@ -111,7 +109,6 @@ public class OhosToolkit extends Toolkit implements sun.awt.KeyboardFocusManager
         }
     }
 
-    /** 简单度量：按字号估算。后续接入 Freetype 的 FontDesignMetrics。 */
     static final class BasicMetrics extends FontMetrics {
         BasicMetrics(Font font) { super(font); }
         @Override public int getLeading() { return 1; }
