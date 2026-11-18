@@ -367,6 +367,25 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
     jclass list = env->FindClass("java/util/ArrayList");
     out += std::string("FindClass(ArrayList)=") + (list ? "OK" : "FAIL") + "\n";
 
+    // --- 强制初始化 sun.java2d.SurfaceData（其静态块会调用 native initIDs） ---
+    {
+        jclass sysCls0 = env->FindClass("java/lang/Class");
+        jmethodID forName0 = env->GetStaticMethodID(sysCls0, "forName",
+            "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;");
+        jclass cl0 = env->FindClass("java/lang/ClassLoader");
+        jmethodID gs0 = env->GetStaticMethodID(cl0, "getSystemClassLoader", "()Ljava/lang/ClassLoader;");
+        jobject loader0 = env->CallStaticObjectMethod(cl0, gs0);
+        jstring nm0 = env->NewStringUTF("sun.java2d.SurfaceData");
+        env->CallStaticObjectMethod(sysCls0, forName0, nm0, JNI_TRUE, loader0);
+        if (env->ExceptionCheck()) {
+            out += "SurfaceData init force: EXCEPTION\n";
+            env->ExceptionDescribe();
+            env->ExceptionClear();
+        } else {
+            out += "SurfaceData init force: OK\n";
+        }
+    }
+
     // --- Java2D 渲染自检：只跑一次（同一进程内多次会重复 createData） ---
     static bool gJava2dTested = false;
     if (!gJava2dTested) {
