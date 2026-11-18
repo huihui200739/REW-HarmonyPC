@@ -75,6 +75,10 @@ OH_NativeXComponent_Callback g_callback = {
     DispatchTouchEventCB,
 };
 
+
+
+}  // namespace
+
 void BlitFrame(const uint32_t* pixels, int width, int height) {
     if (g_window == nullptr || pixels == nullptr) {
         return;
@@ -106,7 +110,6 @@ void BlitFrame(const uint32_t* pixels, int width, int height) {
     OH_LOG_Print(LOG_APP, LOG_INFO, 0, "REWXC", "BlitFrame %{public}dx%{public}d", width, height);
 }
 
-}  // namespace
 
 void RegisterXComponent(napi_env env, napi_value exports) {
     napi_value exportInstance = nullptr;

@@ -281,6 +281,25 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             else { env->ExceptionClear(); JLOG("reg: RegisterNatives fail %{public}s", cn); fail++; }
         }
         JLOG("register: ok=%{public}d fail=%{public}d real=%{public}d stub=%{public}d", ok, fail, real, stub);
+
+    // Register NativeMethods for SurfaceBridge (Java2D -> XComponent surface).
+    {
+        jclass sbCls = env->FindClass("ohos/awt/SurfaceBridge");
+        if (sbCls == nullptr) {
+            env->ExceptionClear();
+            JLOG("SurfaceBridge class=missing");
+        } else {
+            JNINativeMethod sbm[] = {
+                { const_cast<char *>("blit"), const_cast<char *>("([III)V"),
+                  reinterpret_cast<void *>(SurfaceBridge_blit) },
+            };
+            jint rSb = env->RegisterNatives(sbCls, sbm, 1);
+            JLOG("SurfaceBridge class=found register=%{public}d", static_cast<int>(rSb));
+            if (rSb != 0) {
+                env->ExceptionClear();
+            }
+        }
+    }
         {
             // SunToolkit 的若干 native 方法无对应实现，给空实现避免启动崩溃
             jclass stk = env->FindClass("sun/awt/SunToolkit");
