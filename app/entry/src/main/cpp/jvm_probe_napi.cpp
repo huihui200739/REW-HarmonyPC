@@ -482,7 +482,8 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
                         out += "FrameCapture: " + r + "\n";
                         env->ReleaseStringUTFChars(capRes, cs);
                     }
-                    env->CallStaticVoidMethod(rew, mainMid, emptyArgs);
+                    // main() runs on the FrameCapture worker thread; calling it here would
+                    // block this JNI call in the AWT event loop and freeze the ArkTS UI.
                 }
             }
             if (env->ExceptionCheck()) {
