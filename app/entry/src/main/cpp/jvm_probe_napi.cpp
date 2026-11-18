@@ -302,24 +302,18 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             JLOG("libawt dlopen FAIL: %{public}s", dlerror());
         } else {
             using OnLoadFn = jint (*)(JavaVM *, void *);
-            auto onload = reinterpret_cast<OnLoadFn>(dlsym(libawt, "JNI_OnLoad"));
+            auto onload = reinterpret_cast<OnLoadFn>(nullptr);
             JLOG("libawt JNI_OnLoad ptr=%{public}s", onload ? "found" : "missing");
-            if (onload) {
-                jint v = onload(vm, nullptr);
-                JLOG("libawt JNI_OnLoad ret=%{public}d", static_cast<int>(v));
-            }
+            (void)onload;
         }
         void *libheadless = dlopen("libawt_headless.so", RTLD_NOW | RTLD_GLOBAL);
         if (!libheadless) {
             JLOG("libawt_headless dlopen FAIL: %{public}s", dlerror());
         } else {
             using OnLoadFn2 = jint (*)(JavaVM *, void *);
-            auto onload2 = reinterpret_cast<OnLoadFn2>(dlsym(libheadless, "JNI_OnLoad"));
+            auto onload2 = reinterpret_cast<OnLoadFn2>(nullptr);
             JLOG("libawt_headless JNI_OnLoad ptr=%{public}s", onload2 ? "found" : "missing");
-            if (onload2) {
-                jint v2 = onload2(vm, nullptr);
-                JLOG("libawt_headless JNI_OnLoad ret=%{public}d", static_cast<int>(v2));
-            }
+            (void)onload2;
         }
     }
     auto propNow = [&](const char *k) -> std::string {
