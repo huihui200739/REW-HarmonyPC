@@ -2,6 +2,7 @@
 #include <ohaudio/native_audiostream_base.h>
 #include <ohaudio/native_audiostreambuilder.h>
 #include <ohaudio/native_audiorenderer.h>
+#include <ohaudio/native_audiocapturer.h>
 #include <hilog/log.h>
 #include <mutex>
 #include <cstring>
@@ -27,6 +28,14 @@ struct RendererState {
 };
 
 RendererState g_state;
+
+struct CaptureState {
+    OH_AudioCapturer* capturer = nullptr;
+    RingBuffer* ring = nullptr;
+    bool started = false;
+};
+
+CaptureState g_capture;
 
 size_t ringReadable(RingBuffer* rb) {
     size_t w = rb->writePos;
@@ -81,6 +90,13 @@ OH_AudioData_Callback_Result OnWriteData(OH_AudioRenderer* renderer, void* userD
                static_cast<size_t>(audioDataSize) - got);
     }
     return AUDIO_DATA_CALLBACK_RESULT_VALID;
+}
+
+void OnReadData(OH_AudioCapturer* capturer, void* userData,
+                void* audioData, int32_t audioDataSize) {
+    RingBuffer* rb = static_cast<RingBuffer*>(userData);
+    ringWrite(rb, static_cast<const unsigned char*>(audioData),
+              static_cast<size_t>(audioDataSize));
 }
 
 void OnError(OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) {
@@ -154,6 +170,71 @@ Java_ohos_sound_OhosSourceDataLine_nativeClose(JNIEnv* env, jclass clazz, jlong 
         delete st->ring;
         st->ring = nullptr;
         OH_LOG_Print(LOG_APP, LOG_INFO, 0, "REWAUDIO", "renderer closed");
+    }
+}
+
+JNIEXPORT jlong JNICALL
+Java_ohos_sound_OhosTargetDataLine_nativeOpen(JNIEnv* env, jclass clazz,
+                                              jint sampleRate, jint channels, jint bits) {
+    if (g_capture.capturer != nullptr) {
+        return reinterpret_cast<jlong>(&g_capture);
+    }
+    g_capture.ring = new RingBuffer();
+
+    OH_AudioStreamBuilder* builder = nullptr;
+    if (OH_AudioStreamBuilder_Create(&builder, AUDIOSTREAM_TYPE_CAPTURER) != AUDIOSTREAM_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, 0, "REWAUDIO", "capturer builder create failed");
+        return 0;
+    }
+    OH_AudioStreamBuilder_SetSamplingRate(builder, sampleRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder, channels);
+    OH_AudioStreamBuilder_SetSampleFormat(builder,
+            bits == 8 ? AUDIOSTREAM_SAMPLE_U8 : AUDIOSTREAM_SAMPLE_S16LE);
+    OH_AudioStreamBuilder_SetEncodingType(builder, AUDIOSTREAM_ENCODING_TYPE_RAW);
+    OH_AudioStreamBuilder_SetCapturerInfo(builder, AUDIOSTREAM_SOURCE_TYPE_MIC);
+    OH_AudioStreamBuilder_SetCapturerReadDataCallback(builder, OnReadData, g_capture.ring);
+
+    if (OH_AudioStreamBuilder_GenerateCapturer(builder, &g_capture.capturer) != AUDIOSTREAM_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, 0, "REWAUDIO", "generate capturer failed");
+        OH_AudioStreamBuilder_Destroy(builder);
+        return 0;
+    }
+    OH_AudioStreamBuilder_Destroy(builder);
+    OH_AudioCapturer_Start(g_capture.capturer);
+    g_capture.started = true;
+    OH_LOG_Print(LOG_APP, LOG_INFO, 0, "REWAUDIO",
+                 "capturer started %{public}d Hz %{public}d ch", sampleRate, channels);
+    return reinterpret_cast<jlong>(&g_capture);
+}
+
+JNIEXPORT jint JNICALL
+Java_ohos_sound_OhosTargetDataLine_nativeRead(JNIEnv* env, jclass clazz, jlong handle,
+                                              jbyteArray data, jint off, jint len) {
+    CaptureState* st = reinterpret_cast<CaptureState*>(handle);
+    if (st == nullptr || st->ring == nullptr || data == nullptr) {
+        return 0;
+    }
+    jbyte* buf = env->GetByteArrayElements(data, nullptr);
+    if (buf == nullptr) {
+        return 0;
+    }
+    size_t got = ringRead(st->ring, reinterpret_cast<unsigned char*>(buf) + off,
+                          static_cast<size_t>(len));
+    env->ReleaseByteArrayElements(data, buf, 0);
+    return static_cast<jint>(got);
+}
+
+JNIEXPORT void JNICALL
+Java_ohos_sound_OhosTargetDataLine_nativeClose(JNIEnv* env, jclass clazz, jlong handle) {
+    CaptureState* st = reinterpret_cast<CaptureState*>(handle);
+    if (st != nullptr && st->capturer != nullptr) {
+        OH_AudioCapturer_Stop(st->capturer);
+        OH_AudioCapturer_Release(st->capturer);
+        st->capturer = nullptr;
+        st->started = false;
+        delete st->ring;
+        st->ring = nullptr;
+        OH_LOG_Print(LOG_APP, LOG_INFO, 0, "REWAUDIO", "capturer closed");
     }
 }
 

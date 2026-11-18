@@ -68,8 +68,12 @@ public final class OhosMixerProvider extends MixerProvider {
         @Override public Line.Info[] getSourceLineInfo(Line.Info info) { return new Line.Info[0]; }
         @Override public Line.Info[] getTargetLineInfo(Line.Info info) { return new Line.Info[0]; }
         @Override public boolean isLineSupported(Line.Info info) {
-            return info != null
-                    && javax.sound.sampled.SourceDataLine.class.isAssignableFrom(info.getLineClass());
+            if (info == null) {
+                return false;
+            }
+            Class<?> lc = info.getLineClass();
+            return javax.sound.sampled.SourceDataLine.class.isAssignableFrom(lc)
+                    || javax.sound.sampled.TargetDataLine.class.isAssignableFrom(lc);
         }
         @Override public Line getLine(Line.Info info) throws LineUnavailableException {
             if (info != null && javax.sound.sampled.SourceDataLine.class.isAssignableFrom(info.getLineClass())) {
@@ -84,6 +88,19 @@ public final class OhosMixerProvider extends MixerProvider {
                     fmt = new AudioFormat(48000f, 16, 2, true, false);
                 }
                 return new OhosSourceDataLine(fmt);
+            }
+            if (info != null && javax.sound.sampled.TargetDataLine.class.isAssignableFrom(info.getLineClass())) {
+                AudioFormat fmt = null;
+                if (info instanceof DataLine.Info) {
+                    AudioFormat[] fmts = ((DataLine.Info) info).getFormats();
+                    if (fmts.length > 0) {
+                        fmt = fmts[0];
+                    }
+                }
+                if (fmt == null) {
+                    fmt = new AudioFormat(48000f, 16, 1, true, false);
+                }
+                return new OhosTargetDataLine(fmt);
             }
             throw new LineUnavailableException("OHOS line not supported: " + info);
         }
