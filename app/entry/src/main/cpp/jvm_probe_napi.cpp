@@ -18,6 +18,27 @@
 
 extern void BlitFrame(const uint32_t* pixels, int width, int height);
 
+static JavaVM* g_vm = nullptr;
+static jobject g_inputBridgeClass = nullptr;
+
+void DispatchInput(int type, int x, int y) {
+    if (g_vm == nullptr || g_inputBridgeClass == nullptr) {
+        return;
+    }
+    JNIEnv* env = nullptr;
+    if (g_vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        g_vm->AttachCurrentThread(reinterpret_cast<void**>(&env), nullptr);
+    }
+    jclass cls = static_cast<jclass>(g_inputBridgeClass);
+    jmethodID mid = env->GetStaticMethodID(cls, "dispatch", "(III)V");
+    if (mid != nullptr) {
+        env->CallStaticVoidMethod(cls, mid, type, x, y);
+        if (env->ExceptionCheck()) {
+            env->ExceptionClear();
+        }
+    }
+}
+
 static void JNICALL SurfaceBridge_blit(JNIEnv* env, jclass clazz, jintArray pixels, jint w, jint h) {
     if (pixels == nullptr) {
         return;
@@ -281,7 +302,18 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             else { env->ExceptionClear(); JLOG("reg: RegisterNatives fail %{public}s", cn); fail++; }
         }
         JLOG("register: ok=%{public}d fail=%{public}d real=%{public}d stub=%{public}d", ok, fail, real, stub);
+    env->GetJavaVM(&g_vm);
 
+    {
+        jclass ibCls = env->FindClass("ohos/awt/InputBridge");
+        if (ibCls != nullptr) {
+            g_inputBridgeClass = env->NewGlobalRef(ibCls);
+            JLOG("InputBridge class=found");
+        } else {
+            env->ExceptionClear();
+            JLOG("InputBridge class=missing");
+        }
+    }
     // Register NativeMethods for SurfaceBridge (Java2D -> XComponent surface).
     {
         jclass sbCls = env->FindClass("ohos/awt/SurfaceBridge");

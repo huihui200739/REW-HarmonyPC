@@ -5,6 +5,8 @@
 #include <sys/mman.h>
 #include <cstring>
 
+extern void DispatchInput(int type, int x, int y);
+
 namespace {
 
 OHNativeWindow* g_window = nullptr;
@@ -66,6 +68,28 @@ void OnSurfaceDestroyedCB(OH_NativeXComponent* component, void* window) {
 }
 
 void DispatchTouchEventCB(OH_NativeXComponent* component, void* window) {
+    if (component == nullptr || window == nullptr) {
+        return;
+    }
+    OH_NativeXComponent_TouchEvent touchEvent;
+    if (OH_NativeXComponent_GetTouchEvent(component, window, &touchEvent) != 0) {
+        return;
+    }
+    int x = static_cast<int>(touchEvent.x);
+    int y = static_cast<int>(touchEvent.y);
+    switch (touchEvent.type) {
+        case OH_NATIVEXCOMPONENT_DOWN:
+            DispatchInput(0, x, y);
+            break;
+        case OH_NATIVEXCOMPONENT_UP:
+            DispatchInput(1, x, y);
+            break;
+        case OH_NATIVEXCOMPONENT_MOVE:
+            DispatchInput(2, x, y);
+            break;
+        default:
+            break;
+    }
 }
 
 OH_NativeXComponent_Callback g_callback = {
