@@ -40,8 +40,15 @@ public final class InputBridge {
                 id = MouseEvent.MOUSE_MOVED;
                 break;
         }
-        MouseEvent ev = new MouseEvent(c, id, System.currentTimeMillis(),
+        final Component target;
+        if (c instanceof java.awt.Container) {
+            Component deep = ((java.awt.Container) c).getComponentAt(x, y);
+            target = deep != null ? deep : c;
+        } else {
+            target = c;
+        }
+        MouseEvent ev = new MouseEvent(target, id, System.currentTimeMillis(),
                 0, x, y, 1, false, MouseEvent.BUTTON1);
-        EventQueue.invokeLater(() -> c.dispatchEvent(ev));
+        EventQueue.invokeLater(() -> target.dispatchEvent(ev));
     }
 }

@@ -77,6 +77,8 @@ void DispatchTouchEventCB(OH_NativeXComponent* component, void* window) {
     }
     int x = static_cast<int>(touchEvent.x);
     int y = static_cast<int>(touchEvent.y);
+    OH_LOG_Print(LOG_APP, LOG_INFO, 0, "REWXC", "Touch type=%{public}d x=%{public}d y=%{public}d",
+                 static_cast<int>(touchEvent.type), x, y);
     switch (touchEvent.type) {
         case OH_NATIVEXCOMPONENT_DOWN:
             DispatchInput(0, x, y);
