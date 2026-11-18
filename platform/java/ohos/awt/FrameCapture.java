@@ -70,6 +70,9 @@ public final class FrameCapture {
 
             BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             Graphics2D g = img.createGraphics();
+            g.setColor(java.awt.Color.WHITE);
+            g.fillRect(0, 0, width, height);
+            g.setColor(java.awt.Color.BLACK);
             final int[] painted = {0};
             final StringBuilder detail = new StringBuilder();
             EventQueue.invokeAndWait(() -> {
