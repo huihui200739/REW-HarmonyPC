@@ -151,11 +151,11 @@ struct Index {
       Button(this.busy ? '运行中…' : '重新探测')
         .enabled(!this.busy)
         .onClick(() => { this.run(); })
-      if (this.showImage && this.rewPixels !== undefined) {
-        Image(this.rewPixels)
+      if (this.showImage) {
+        XComponent({ id: 'rewSurface', type: 'surface', libraryname: 'rewjvm' })
           .width('100%')
-          .objectFit(ImageFit.Contain)
           .layoutWeight(1)
+          .onLoad(() => { this.log = 'XComponent surface ready'; })
       } else {
         Scroll() {
           Text(this.log).fontSize(13).fontFamily('monospace').width('100%')

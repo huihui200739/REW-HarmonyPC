@@ -544,7 +544,10 @@ napi_value MemProbe(napi_env env, napi_callback_info info) {
     return res;
 }
 
+extern void RegisterXComponent(napi_env env, napi_value exports);
+
 napi_value Init(napi_env env, napi_value exports) {
+    RegisterXComponent(env, exports);
     napi_property_descriptor desc[] = {
         {"probe", nullptr, Probe, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"memProbe", nullptr, MemProbe, nullptr, nullptr, nullptr, napi_default, nullptr},
