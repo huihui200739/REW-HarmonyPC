@@ -616,11 +616,30 @@ napi_value MemProbe(napi_env env, napi_callback_info info) {
 }
 
 
+static napi_value SendTouch(napi_env env, napi_callback_info info) {
+    size_t argc = 3;
+    napi_value args[3] = {nullptr};
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    int32_t type = 0;
+    int32_t x = 0;
+    int32_t y = 0;
+    if (argc >= 3) {
+        napi_get_value_int32(env, args[0], &type);
+        napi_get_value_int32(env, args[1], &x);
+        napi_get_value_int32(env, args[2], &y);
+    }
+    DispatchInput(type, x, y);
+    napi_value undef = nullptr;
+    napi_get_undefined(env, &undef);
+    return undef;
+}
+
 napi_value Init(napi_env env, napi_value exports) {
     RegisterXComponent(env, exports);
     napi_property_descriptor desc[] = {
         {"probe", nullptr, Probe, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"memProbe", nullptr, MemProbe, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"sendTouch", nullptr, SendTouch, nullptr, nullptr, nullptr, napi_default, nullptr},
     };
     napi_define_properties(env, exports, sizeof desc / sizeof desc[0], desc);
     return exports;

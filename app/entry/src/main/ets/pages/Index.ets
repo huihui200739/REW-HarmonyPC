@@ -1,4 +1,4 @@
-import { probe, memProbe } from 'librewjvm.so';
+import { probe, memProbe, sendTouch } from 'librewjvm.so';
 import { zlib } from '@kit.BasicServicesKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { common } from '@kit.AbilityKit';
@@ -156,6 +156,22 @@ struct Index {
           .width('100%')
           .layoutWeight(1)
           .onLoad(() => { this.log = 'XComponent surface ready'; })
+          .onTouch((e: TouchEvent) => {
+            if (e.touches.length > 0) {
+              const t = e.touches[0];
+              let type = 2;
+              if (e.type === TouchType.Down) {
+                type = 0;
+              } else if (e.type === TouchType.Up) {
+                type = 1;
+              }
+              try {
+                sendTouch(type, Math.round(t.x), Math.round(t.y));
+              } catch (err) {
+                this.log = 'sendTouch failed';
+              }
+            }
+          })
       } else {
         Scroll() {
           Text(this.log).fontSize(13).fontFamily('monospace').width('100%')
