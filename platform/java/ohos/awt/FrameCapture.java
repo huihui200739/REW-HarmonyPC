@@ -52,12 +52,13 @@ public final class FrameCapture {
                 // NOTE: our FramePeer is a stub, so isVisible() is always false and
                 // setSize() only changes the Java-side fields - force a real size here.
                 for (Frame f : Frame.getFrames()) {
-                    detail.append("[").append(f.getTitle())
-                          .append(" ").append(f.getWidth()).append("x").append(f.getHeight())
-                          .append(" comps=").append(f.getComponentCount()).append("] ");
                     f.setSize(width, height);
                     f.doLayout();
                     f.validate();
+                    detail.append("[").append(f.getTitle())
+                          .append(" ").append(f.getWidth()).append("x").append(f.getHeight())
+                          .append(" comps=").append(f.getComponentCount())
+                          .append(" valid=").append(f.isValid()).append("] ");
                     f.paintAll(g);
                     painted[0]++;
                 }
