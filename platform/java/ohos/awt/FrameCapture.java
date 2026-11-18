@@ -77,6 +77,33 @@ public final class FrameCapture {
         }
     }
 
+    private static String audioSelftest() {
+        StringBuilder sb = new StringBuilder("audioSelftest: ");
+        try {
+            javax.sound.sampled.Mixer.Info[] infos = javax.sound.sampled.AudioSystem.getMixerInfo();
+            sb.append("mixers=").append(infos.length);
+            if (infos.length == 0) {
+                return sb.append(" (none)").toString();
+            }
+            javax.sound.sampled.Mixer mixer = javax.sound.sampled.AudioSystem.getMixer(infos[0]);
+            javax.sound.sampled.AudioFormat fmt =
+                    new javax.sound.sampled.AudioFormat(48000f, 16, 2, true, false);
+            javax.sound.sampled.SourceDataLine line =
+                    (javax.sound.sampled.SourceDataLine) mixer.getLine(
+                            new javax.sound.sampled.DataLine.Info(
+                                    javax.sound.sampled.SourceDataLine.class, fmt));
+            line.open(fmt);
+            line.start();
+            int written = line.write(new byte[48000 * 4], 0, 48000 * 4);
+            line.drain();
+            line.close();
+            sb.append(" write=").append(written).append(" OK");
+        } catch (Throwable t) {
+            sb.append(" FAIL: ").append(t);
+        }
+        return sb.toString();
+    }
+
     private static void makeTreeVisible(java.awt.Component c) {
         c.setVisible(true);
         if (c instanceof java.awt.Container) {
@@ -132,6 +159,7 @@ public final class FrameCapture {
             t.setDaemon(true);
             t.start();
             log.append("main started; ");
+            log.append(audioSelftest()).append("; ");
             Thread.sleep(waitMs);
 
             // NOTE: modal dialogs are left open on purpose; closing them
