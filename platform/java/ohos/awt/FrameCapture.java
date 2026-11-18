@@ -25,7 +25,7 @@ public final class FrameCapture {
     }
 
     private static void dumpTree(java.awt.Component c, int depth, StringBuilder sb) {
-        if (depth > 3) {
+        if (depth > 10) {
             return;
         }
         for (int i = 0; i < depth; i++) {
