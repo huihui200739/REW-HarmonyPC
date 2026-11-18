@@ -375,6 +375,18 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
         if (biCls) {
             jmethodID ctor = env->GetMethodID(biCls, "<init>", "(III)V");
             jobject img = env->NewObject(biCls, ctor, 400, 200, 1 /* TYPE_INT_RGB */);
+            // 纯像素写入（不经 Graphics2D/SurfaceData），验证 BufferedImage + ImageIO 链路
+            {
+                jmethodID setRGB = env->GetMethodID(biCls, "setRGB", "(III)V");
+                if (!setRGB) { env->ExceptionClear(); out += "setrgb-test: NO METHOD\n"; }
+                for (int y = 0; y < 200; y += 10) {
+                    for (int x = 0; x < 400; x += 10) {
+                        env->CallVoidMethod(img, setRGB, x, y, 0x0000FF00);
+                    }
+                }
+                if (env->ExceptionCheck()) { env->ExceptionClear(); out += "setrgb-test: EXCEPTION\n"; }
+                else { out += "setrgb-test: OK\n"; }
+            }
             jclass g2dCls = env->FindClass("java/awt/Graphics2D");
             jmethodID createG = env->GetMethodID(biCls, "createGraphics", "()Ljava/awt/Graphics2D;");
             jobject g = env->CallObjectMethod(img, createG);
