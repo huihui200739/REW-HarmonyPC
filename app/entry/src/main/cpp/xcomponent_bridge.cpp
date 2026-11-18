@@ -5,6 +5,7 @@
 #include <cstring>
 
 namespace {
+
 OHNativeWindow* g_window = nullptr;
 int g_width = 1600;
 int g_height = 1000;
@@ -33,7 +34,7 @@ void FillSolid(uint32_t argb) {
         }
         munmap(mapped, handle->size);
     }
-    Region flushRegion = {nullptr, 0};  // nullptr rects = fill whole buffer
+    Region flushRegion = {nullptr, 0};
     OH_NativeWindow_NativeWindowFlushBuffer(g_window, buffer, fenceFd, flushRegion);
 }
 
@@ -66,7 +67,6 @@ OH_NativeXComponent_Callback g_callback = {
     OnSurfaceDestroyedCB,
     DispatchTouchEventCB,
 };
-}
 
 }  // namespace
 

@@ -16,6 +16,8 @@
 #include <dirent.h>
 #include <unistd.h>
 
+extern void RegisterXComponent(napi_env env, napi_value exports);
+
 namespace {
 
 using CreateJavaVmFn = jint (*)(JavaVM **, void **, void *);
@@ -544,7 +546,6 @@ napi_value MemProbe(napi_env env, napi_callback_info info) {
     return res;
 }
 
-extern void RegisterXComponent(napi_env env, napi_value exports);
 
 napi_value Init(napi_env env, napi_value exports) {
     RegisterXComponent(env, exports);
