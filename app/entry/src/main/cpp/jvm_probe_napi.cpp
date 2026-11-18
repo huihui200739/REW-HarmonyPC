@@ -16,6 +16,24 @@
 #include <dirent.h>
 #include <unistd.h>
 
+extern void BlitFrame(const uint32_t* pixels, int width, int height);
+
+static void JNICALL SurfaceBridge_blit(JNIEnv* env, jclass clazz, jintArray pixels, jint w, jint h) {
+    if (pixels == nullptr) {
+        return;
+    }
+    jsize len = env->GetArrayLength(pixels);
+    jint* buf = env->GetIntArrayElements(pixels, nullptr);
+    if (buf == nullptr) {
+        return;
+    }
+    size_t need = static_cast<size_t>(w) * static_cast<size_t>(h);
+    if (static_cast<size_t>(len) >= need) {
+        BlitFrame(reinterpret_cast<const uint32_t*>(buf), w, h);
+    }
+    env->ReleaseIntArrayElements(pixels, buf, JNI_ABORT);
+}
+
 extern void RegisterXComponent(napi_env env, napi_value exports);
 
 namespace {
@@ -272,7 +290,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
                     { const_cast<char *>("closeSplashScreen"), const_cast<char *>("()V"), (void *)EmptyInitIDs },
                 };
                 jint r2 = env->RegisterNatives(stk, sm, sizeof(sm) / sizeof(sm[0]));
-                JLOG("register SunToolkit ret=%{public}d", static_cast<int>(r2));
+                        JLOG("register SunToolkit ret=%{public}d", static_cast<int>(r2));
                 if (r2 != 0) env->ExceptionClear();
             }
         }

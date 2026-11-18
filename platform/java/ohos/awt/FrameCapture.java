@@ -201,6 +201,8 @@ public final class FrameCapture {
             });
             g.dispose();
             boolean ok = ImageIO.write(img, "png", new File(outPath));
+            int[] argb = img.getRGB(0, 0, width, height, null, 0, width);
+            SurfaceBridge.push(argb, width, height);
             try {
                 java.nio.file.Files.writeString(java.nio.file.Path.of(outPath + ".tree.txt"),
                         detail.toString(), java.nio.charset.StandardCharsets.UTF_8);

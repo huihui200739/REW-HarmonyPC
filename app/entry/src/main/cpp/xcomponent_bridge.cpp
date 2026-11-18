@@ -75,6 +75,37 @@ OH_NativeXComponent_Callback g_callback = {
     DispatchTouchEventCB,
 };
 
+void BlitFrame(const uint32_t* pixels, int width, int height) {
+    if (g_window == nullptr || pixels == nullptr) {
+        return;
+    }
+    g_width = width;
+    g_height = height;
+    OH_NativeWindow_NativeWindowHandleOpt(g_window, SET_BUFFER_GEOMETRY, g_width, g_height);
+    OHNativeWindowBuffer* buffer = nullptr;
+    int fenceFd = -1;
+    if (OH_NativeWindow_NativeWindowRequestBuffer(g_window, &buffer, &fenceFd) != 0) {
+        return;
+    }
+    BufferHandle* handle = OH_NativeWindow_GetBufferHandleFromNative(buffer);
+    if (handle == nullptr) {
+        OH_NativeWindow_NativeWindowAbortBuffer(g_window, buffer);
+        return;
+    }
+    void* mapped = mmap(handle->virAddr, handle->size, PROT_READ | PROT_WRITE, MAP_SHARED, handle->fd, 0);
+    if (mapped != MAP_FAILED) {
+        uint32_t* dst = static_cast<uint32_t*>(mapped);
+        size_t count = static_cast<size_t>(handle->size) / sizeof(uint32_t);
+        size_t srcCount = static_cast<size_t>(width) * static_cast<size_t>(height);
+        size_t n = (count < srcCount) ? count : srcCount;
+        memcpy(dst, pixels, n * sizeof(uint32_t));
+        munmap(mapped, handle->size);
+    }
+    Region flushRegion = {nullptr, 0};
+    OH_NativeWindow_NativeWindowFlushBuffer(g_window, buffer, fenceFd, flushRegion);
+    OH_LOG_Print(LOG_APP, LOG_INFO, 0, "REWXC", "BlitFrame %{public}dx%{public}d", width, height);
+}
+
 }  // namespace
 
 void RegisterXComponent(napi_env env, napi_value exports) {
