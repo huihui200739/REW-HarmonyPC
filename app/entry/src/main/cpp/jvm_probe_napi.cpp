@@ -453,7 +453,31 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
             jclass strCls = env->FindClass("java/lang/String");
             jobjectArray emptyArgs = env->NewObjectArray(0, strCls, nullptr);
             out += "invoking main()...\n";
+            // 用 FrameCapture 在后台启动 main 并在之后把可见窗口渲染成 PNG
+            jclass fcCls2 = env->FindClass("ohos/awt/FrameCapture");
+            if (fcCls2) {
+                jmethodID runCap = env->GetStaticMethodID(fcCls2, "runAndCapture",
+                    "(Ljava/lang/String;Ljava/lang/String;III)Ljava/lang/String;");
+                if (runCap) {
+                    jstring clsName = env->NewStringUTF("roomeqwizard.RoomEQ_Wizard");
+                    std::string capPath = workDir + "/rew-window.png";
+                    jstring capOut = env->NewStringUTF(capPath.c_str());
+                    auto capRes = static_cast<jstring>(env->CallStaticObjectMethod(fcCls2, runCap,
+                        clsName, capOut, 20000, 1600, 1000));
+                    if (env->ExceptionCheck()) {
+                        env->ExceptionClear();
+                        out += "FrameCapture: EXCEPTION\n";
+                    } else if (capRes) {
+                        const char *cs = env->GetStringUTFChars(capRes, nullptr);
+                        out += std::string("FrameCapture: ") + (cs ? cs : "?") + "\n";
+                        env->ReleaseStringUTFChars(capRes, cs);
+                    }
+                    env->CallStaticVoidMethod(rew, mainMid, emptyArgs);
+                    goto after_main;
+                }
+            }
             env->CallStaticVoidMethod(rew, mainMid, emptyArgs);
+            after_main:;
             if (env->ExceptionCheck()) {
                 out += "main() threw:\n";
                 env->ExceptionDescribe();
