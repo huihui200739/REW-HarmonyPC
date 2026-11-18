@@ -1,22 +1,9 @@
 {
   "app": {
-    "signingConfigs": [{
-      "name": "default",
-      "type": "HarmonyOS",
-      "material": {
-        "storeFile": "/Applications/DevEco-Studio.app/Contents/sdk/default/openharmony/toolchains/lib/OpenHarmony.p12",
-        "storePassword": "123456",
-        "keyAlias": "openharmony application release",
-        "keyPassword": "123456",
-        "signAlg": "SHA256withECDSA",
-        "profile": "/tmp/rew-sign/rew-debug.p7b",
-        "certpath": "/tmp/rew-sign/rew-debug.cer"
-      }
-    }],
+    "signingConfigs": [],
     "products": [
       {
         "name": "default",
-        "signingConfig": "default",
         "compatibleSdkVersion": "6.1.1(24)",
         "targetSdkVersion": "6.1.1(24)",
         "runtimeOS": "HarmonyOS"

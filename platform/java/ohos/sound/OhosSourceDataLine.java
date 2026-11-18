@@ -22,6 +22,11 @@ public final class OhosSourceDataLine implements SourceDataLine {
     private boolean open;
     private boolean running;
     private int bufferSize = 8192;
+    private long handle = 0;
+
+    private static native long nativeOpen(int sampleRate, int channels, int bits);
+    private static native int nativeWrite(long handle, byte[] data, int off, int len);
+    private static native void nativeClose(long handle);
     private long position;
 
     public OhosSourceDataLine(AudioFormat format) {
@@ -31,9 +36,25 @@ public final class OhosSourceDataLine implements SourceDataLine {
 
     @Override public void open(AudioFormat fmt, int bufferSize) { this.bufferSize = bufferSize; open = true; }
     @Override public void open(AudioFormat fmt) { open = true; }
-    @Override public void open() { open = true; }
+    @Override public void open() {
+        open = true;
+        try {
+            handle = nativeOpen((int) format.getSampleRate(),
+                                format.getChannels(),
+                                format.getSampleSizeInBits());
+        } catch (Throwable ignored) {
+            handle = 0;
+        }
+    }
     @Override public int write(byte[] b, int off, int len) {
         position += len;
+        if (handle != 0) {
+            try {
+                return nativeWrite(handle, b, off, len);
+            } catch (Throwable ignored) {
+                // fall through: discard
+            }
+        }
         return len;
     }
     @Override public void drain() { }
@@ -52,7 +73,18 @@ public final class OhosSourceDataLine implements SourceDataLine {
     }
     @Override public float getLevel() { return AudioSystem.NOT_SPECIFIED; }
     @Override public Line.Info getLineInfo() { return info; }
-    @Override public void close() { open = false; running = false; }
+    @Override public void close() {
+        open = false;
+        running = false;
+        if (handle != 0) {
+            try {
+                nativeClose(handle);
+            } catch (Throwable ignored) {
+                // ignore
+            }
+            handle = 0;
+        }
+    }
     @Override public boolean isOpen() { return open; }
     @Override public Control[] getControls() { return new Control[0]; }
     @Override public boolean isControlSupported(Control.Type control) { return false; }
