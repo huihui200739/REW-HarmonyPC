@@ -301,19 +301,13 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
         if (!libawt) {
             JLOG("libawt dlopen FAIL: %{public}s", dlerror());
         } else {
-            using OnLoadFn = jint (*)(JavaVM *, void *);
-            auto onload = reinterpret_cast<OnLoadFn>(nullptr);
-            JLOG("libawt JNI_OnLoad ptr=%{public}s", onload ? "found" : "missing");
-            (void)onload;
+            JLOG("libawt dlopen ok");
         }
         void *libheadless = dlopen("libawt_headless.so", RTLD_NOW | RTLD_GLOBAL);
         if (!libheadless) {
             JLOG("libawt_headless dlopen FAIL: %{public}s", dlerror());
         } else {
-            using OnLoadFn2 = jint (*)(JavaVM *, void *);
-            auto onload2 = reinterpret_cast<OnLoadFn2>(nullptr);
-            JLOG("libawt_headless JNI_OnLoad ptr=%{public}s", onload2 ? "found" : "missing");
-            (void)onload2;
+            JLOG("libawt_headless dlopen ok");
         }
     }
     auto propNow = [&](const char *k) -> std::string {
