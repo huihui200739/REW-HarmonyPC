@@ -67,9 +67,25 @@ public final class OhosMixerProvider extends MixerProvider {
         @Override public Line.Info[] getTargetLineInfo() { return new Line.Info[0]; }
         @Override public Line.Info[] getSourceLineInfo(Line.Info info) { return new Line.Info[0]; }
         @Override public Line.Info[] getTargetLineInfo(Line.Info info) { return new Line.Info[0]; }
-        @Override public boolean isLineSupported(Line.Info info) { return false; }
+        @Override public boolean isLineSupported(Line.Info info) {
+            return info != null
+                    && javax.sound.sampled.SourceDataLine.class.isAssignableFrom(info.getLineClass());
+        }
         @Override public Line getLine(Line.Info info) throws LineUnavailableException {
-            throw new LineUnavailableException("OHOS audio line not implemented");
+            if (info != null && javax.sound.sampled.SourceDataLine.class.isAssignableFrom(info.getLineClass())) {
+                AudioFormat fmt = null;
+                if (info instanceof DataLine.Info) {
+                    AudioFormat[] fmts = ((DataLine.Info) info).getFormats();
+                    if (fmts.length > 0) {
+                        fmt = fmts[0];
+                    }
+                }
+                if (fmt == null) {
+                    fmt = new AudioFormat(48000f, 16, 2, true, false);
+                }
+                return new OhosSourceDataLine(fmt);
+            }
+            throw new LineUnavailableException("OHOS line not supported: " + info);
         }
         @Override public int getMaxLines(Line.Info info) { return 0; }
         @Override public Line[] getSourceLines() { return new Line[0]; }
