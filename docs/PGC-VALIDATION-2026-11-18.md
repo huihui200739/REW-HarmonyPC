@@ -49,5 +49,5 @@
 |---|---|---|
 | 11 | REW 窗口数量 | ✅ 3 个（含主窗口 REW V5.31.3） |
 | 12 | REW 菜单栏 | ✅ 7 项 |
-| 13 | 界面完整渲染 | ⚠️ 被 REW 自身启动错误对话框（模态）阻塞 |
+| 13 | 界面完整渲染 | ✅ **达成**（1600x1000，见 img/rew-ui-rendered-2026-11-18.png） |
 | 14 | 启动错误 | java.lang.reflect.InvocationTargetException occurred during startup |

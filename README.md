@@ -87,18 +87,11 @@ scripts/verify.sh               # 补丁哈希 + 依赖清单 + 构建入口检�
 
 ## 已知限制
 
-### 1. 界面被 REW 自身的启动错误对话框阻塞
+### 1. 渲染到离屏图像，尚未上屏
 
-REW 启动时会弹出两个模态对话框：
-
-- `roomeqwizard.iE` —— Multi-input capture upgrade（Pro 功能推广）
-- `JXErrorDialog` —— **Error during startup**：`java.lang.reflect.InvocationTargetException`
-
-主窗口的菜单栏（File / Tools / Preferences / Graph / Help / Donate / Pro Upgrades）已构建完成，
-但 contentPane 要等这两个对话框关闭后才继续构建，因此当前只能看到菜单栏。
-
-从外部线程关闭模态框会与 Swing 的 `SecondaryLoop` 形成双向等待（`doClick()` 与
-`setVisible(false)` 两种方式实测都会卡死），所以暂未绕过。
+REW 的完整界面已经可以被渲染出来（[证据图](docs/img/rew-ui-rendered-2026-11-18.png)），
+但结果是写入 `rew-window.png`，还没有接到 ArkTS 的 XComponent 表面。
+上屏需要：FramePeer 创建真实 OHOS 窗口 + 像素传输 + 输入事件回灌。
 
 ### 2. 仅解释执行
 
@@ -106,9 +99,15 @@ REW 启动时会弹出两个模态对话框：
 
 ### 3. Java Sound 未实现
 
-需要 OHAudio 后端，尚未开始。
+需要 OHAudio 后端，尚未开始。界面里的设备下拉框因此为空。
 
 ### 4. 未在真机验证
 
 仅在 HarmonyOS 模拟器（API 24 / arm64 / 2in1）上验证。
 
+## 两个关键修复（供他人复用）
+
+| 现象 | 根因 | 修复 |
+|---|---|---|
+| `ICC_ColorSpace.toRGB` 抛 `ArrayIndexOutOfBoundsException: Index 1 out of bounds for length 1` | 自建 identity CMM 的 `colorConvert` 返回数组长度用了 `src.length`（灰度=1），而 `toRGB` 要读 `tmp[0..2]` | 返回数组按**输出分量数**分配，灰度值复制到 RGB 三通道 |
+| `printAll(g)` 在离屏 Graphics 上什么都不画 | `printAll` 走 `Printable` 路径，要求 `PrintGraphics`，不满足直接跳过 | 改用 **`paint(g)`** |
