@@ -33,7 +33,8 @@ void FillSolid(uint32_t argb) {
         }
         munmap(mapped, handle->size);
     }
-    OH_NativeWindow_NativeWindowFlushBuffer(g_window, buffer, fenceFd, static_cast<NativeBufferFlushMode>(0));
+    Region flushRegion = {nullptr, 0};  // nullptr rects = fill whole buffer
+    OH_NativeWindow_NativeWindowFlushBuffer(g_window, buffer, fenceFd, flushRegion);
 }
 
 void OnSurfaceCreatedCB(OH_NativeXComponent* component, void* window) {
@@ -65,6 +66,8 @@ OH_NativeXComponent_Callback g_callback = {
     OnSurfaceDestroyedCB,
     DispatchTouchEventCB,
 };
+}
+
 }  // namespace
 
 void RegisterXComponent(napi_env env, napi_value exports) {
