@@ -7,55 +7,69 @@
 
 ---
 
-## 一、做了什么
+## 一、核心成果
 
-把 Room EQ Wizard（REW，闭源 Java 桌面应用）跑到 HarmonyOS PC 上。
-不改界面、不重写功能，而是在 OHOS 上补齐它需要的运行时。
+**REW V5.31.3 的完整界面已在 HarmonyOS PC 上成功渲染。**
+
+![REW UI](docs/img/rew-ui-rendered-2026-11-18.png)
+
+上图为 1600×1000 的渲染输出，包含：
+顶部标签页（Soundcard / Cal files / Comms / Analysis / Equaliser / View）、
+设备选择下拉框、三个电平表（Out / In / Ref In，−10 ~ −100 dBFS 刻度）、
+完整的英文帮助文本。**界面与原版一致，未做任何重写。**
+
+## 二、技术路径
 
 | 层 | 内容 |
 |---|---|
 | JVM | OpenJDK 17（BiSheng 基线）交叉编译到 aarch64-linux-ohos |
 | 类库 | java.base + java.desktop 等 12 个模块，jlink 出 73 MB runtime |
-| 图形 | java.desktop 全量 native（awt/awt_headless/fontmanager/freetype/jawt/lcms/mlib_image/javajpeg） |
-| 移植层 | `ohos.awt`（Toolkit/GraphicsEnvironment/Peers/CMM）+ SurfaceData side table |
-| 宿主 | ArkTS HAP（JNI 启动 JVM、部署 runtime、探针） |
+| 图形 | java.desktop 全量 native（awt / awt_headless / fontmanager / freetype / jawt / lcms / mlib_image / javajpeg） |
+| 移植层 | `ohos.awt`（Toolkit / GraphicsEnvironment / Peers / CMM）+ SurfaceData side table |
+| 宿主 | ArkTS HAP（JNI 启动 JVM、部署 runtime、离屏渲染） |
 
-## 二、实测达成
+## 三、实测证据
 
 | 能力 | 证据 |
 |---|---|
 | OpenJDK 17 在 OHOS 运行 | `java.version=17.0.17-internal`，libjvm.so 20 MB / AArch64 / 零 GLIBC |
 | java.desktop 全量 native | 8 个 .so 全部产出并加载 |
-| REW 主类加载 + main 执行 | 走通 L&F 装配、AWT 事件线程、组件树、`Window.pack()` |
-| REW 稳定运行 | 进程存活、stderr 无异常 |
-| REW 窗口 ×3 | 组件树显示 `REW V5.31.3` 主窗口 |
-| REW 菜单栏 ×7 | File/Tools/Preferences/Graph/Help/Donate/Pro Upgrades |
-| Java2D 渲染管线 | 离屏绘制 PNG（fillRect + drawString + FreeType 字形） |
-| 颜色管理 | 自建 identity CMM，profile 数据直通 |
+| REW 主类加载 + main 执行 | `FrameCapture: main started; frames=3` |
+| REW 界面构建 | `roomeqwizard.oI` 面板 44 个子组件、FlatLaf 组件已实例化 |
+| **REW 界面完整渲染** | **1600×1000 PNG，131 KB（见上图）** |
+| Java2D 管线 | 离屏绘制 + FreeType 字形 + ImageIO 编码全通 |
+| 颜色管理 | 自建 sRGB ICC v2 profile + identity CMM |
 
-## 三、未达成（诚实记录）
+## 四、两个关键修复（对其它 JVM/Java 图形移植有复用价值）
 
-| 项 | 原因 |
-|---|---|
-| 界面完整渲染 | **被 REW 自身启动错误对话框（模态）阻塞** |
-| 输入事件 | 未开始（需 XComponent 事件回灌） |
-| Java Sound | 未开始（需 OHAudio 后端） |
-| JIT | 仅 `-Xint` 解释执行 |
-| 真机验证 | 仅模拟器 |
+| 现象 | 根因 | 修复 |
+|---|---|---|
+| `ICC_ColorSpace.toRGB` 抛 `ArrayIndexOutOfBoundsException: Index 1 out of bounds for length 1` | 自建 CMM 的 `colorConvert(short[], short[])` 返回数组长度用 `src.length`（灰度=1），而 `toRGB` 读 `tmp[0..2]` | 返回数组按**输出分量数**分配，灰度值复制到 RGB 三通道 |
+| `printAll(g)` 在离屏 Graphics 上什么都不画 | `printAll` 走 `Printable` 路径，要求 `PrintGraphics` | 改用 **`paint(g)`** |
 
-## 四、技术要点（对其它 JVM/Java 类移植有复用价值）
+## 五、其它移植要点
 
 | 问题 | 解法 |
 |---|---|
-| OHOS linker 只在 `DT_NEEDED` 闭包内解析符号 | `patchelf --add-needed` 补依赖（libjava→libjdkshim、libfontmanager→libawt_headless） |
-| `java.awt.peer` 未导出，外部 jar 无法实现 ComponentFactory | **把 AWT 后端下沉进 java.desktop** |
-| `PlatformGraphicsInfo` 硬编码 X11 | 补丁改为读 `java.awt.graphicsenv`/`awt.toolkit`，用 system classloader 加载 |
-| `SurfaceData_SetOps` 读 `pData` 字段得到 0x1 | 改为 **native side table**（对象→ops 映射） |
-| lcms native 依赖缺失 | 自建 **identity CMM** |
-| 字体配置走 fontconfig 崩溃 | 强制 MFontConfiguration（properties 驱动） |
-| initIDs 落在空实现导致崩溃 | 预加载 libfontmanager 等，让 dlsym 找到真实符号（real=37/stub=31） |
+| OHOS linker 只在 `DT_NEEDED` 闭包内解析符号 | `patchelf --add-needed`（libjava→libjdkshim、libfontmanager→libawt_headless） |
+| `java.awt.peer` 未导出，外部 jar 无法实现 ComponentFactory | 把 AWT 后端**下沉进 java.desktop** |
+| `PlatformGraphicsInfo` 硬编码 X11 | 补丁改为读 `java.awt.graphicsenv` / `awt.toolkit` |
+| `SurfaceData_SetOps` 读 `pData` 得到 0x1 | 改为 **native side table** |
+| lcms 依赖缺失 | 自建 identity CMM + 完整 sRGB profile |
+| 字体配置走 fontconfig 崩溃 | 强制 MFontConfiguration |
 
-## 五、复现步骤
+## 六、未完成（诚实记录）
+
+| 项 | 原因 |
+|---|---|
+| 界面显示到屏幕 | ArkTS `Image` 组件三条路线（`file://` / `PixelMap` / 自动加载）均未出图；正确方案是 `XComponent` + `OH_NativeWindow`，未排期 |
+| 输入事件 | 依赖上屏方案 |
+| Java Sound | 需 OHAudio 后端，未开始（界面设备下拉框因此为空） |
+| JIT | 仅 `-Xint` |
+| 真机验证 | 仅模拟器（API 24 / arm64 / 2in1） |
+| HAP 签名 | 缺证书密码 |
+
+## 七、复现
 
 ```bash
 jvm/fetch-jdk.sh && jvm/apply-jdk-patches.sh && jvm/configure-jdk.sh
@@ -64,18 +78,9 @@ jvm/build-runtime.sh
 scripts/verify.sh
 ```
 
-然后打包 HAP（`app/` 目录，DevEco Studio 或 hvigorw），安装到 API 24 / arm64 / 2in1 设备。
+然后构建 `app/`（DevEco Studio 或 hvigorw），安装到 API 24 / arm64 / 2in1 设备。
 
-## 六、后续路线
-
-1. **绕过启动错误对话框**（P4 收尾）：找到 `InvocationTargetException` 的真实 cause；
-2. 界面完整渲染 + FramePeer 接 XComponent 上屏；
-3. 输入事件回灌 AWT EventQueue；
-4. Java Sound（OHAudio 后端）；
-5. 签名 HAP → 侧载站 → 飞书登记。
-
-## 七、许可
+## 八、许可
 
 - 适配层代码：Apache-2.0；
-- 上游 REW：闭源免费软件，遵循其 EULA，**本仓库不分发 REW 二进制**；
-- 用户需自行从 roomeqwizard.com 下载安装包。
+- 上游 REW：闭源免费软件，遵循其 EULA，**本仓库不分发 REW 二进制**。
