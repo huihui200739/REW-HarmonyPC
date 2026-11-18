@@ -15,6 +15,15 @@ import javax.imageio.ImageIO;
 public final class FrameCapture {
     private FrameCapture() {}
 
+    private static void makeTreeVisible(java.awt.Component c) {
+        c.setVisible(true);
+        if (c instanceof java.awt.Container) {
+            for (java.awt.Component ch : ((java.awt.Container) c).getComponents()) {
+                makeTreeVisible(ch);
+            }
+        }
+    }
+
     private static void dumpTree(java.awt.Component c, int depth, StringBuilder sb) {
         if (depth > 3) {
             return;
@@ -82,6 +91,7 @@ public final class FrameCapture {
                     f.setSize(width, height);
                     f.doLayout();
                     f.validate();
+                    makeTreeVisible(f);
                     java.awt.Container root = (f instanceof javax.swing.JFrame)
                             ? ((javax.swing.JFrame) f).getContentPane() : f;
                     if (root != null) {
@@ -94,7 +104,7 @@ public final class FrameCapture {
                           .append(" ").append(f.getWidth()).append("x").append(f.getHeight())
                           .append(" comps=").append(f.getComponentCount())
                           .append(" valid=").append(f.isValid()).append("] ");
-                    f.paintAll(g);
+                    f.printAll(g);
                     painted[0]++;
                 }
             });
