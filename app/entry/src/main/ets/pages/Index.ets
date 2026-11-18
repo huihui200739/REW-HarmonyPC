@@ -10,6 +10,8 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 struct Index {
   @State log: string = '就绪：启动后自动探测';
   @State busy: boolean = false;
+  @State rewImage: string = '';
+  @State showImage: boolean = false;
 
   aboutToAppear(): void {
     this.run();
@@ -108,12 +110,32 @@ struct Index {
   build() {
     Column({ space: 12 }) {
       Text('REW · JVM 探针').fontSize(22).fontWeight(FontWeight.Bold)
+      Row({ space: 8 }) {
+        Button(this.showImage ? '看日志' : '看界面')
+          .onClick(() => {
+            this.showImage = !this.showImage;
+            if (this.showImage) {
+              const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+              if (ctx) {
+                this.rewImage = ctx.filesDir + '/rew-window.png';
+                this.log = '界面图: ' + this.rewImage;
+              }
+            }
+          })
+      }
       Button(this.busy ? '运行中…' : '重新探测')
         .enabled(!this.busy)
         .onClick(() => { this.run(); })
-      Scroll() {
-        Text(this.log).fontSize(13).fontFamily('monospace').width('100%')
-      }.layoutWeight(1).width('100%')
+      if (this.showImage && this.rewImage.length > 0) {
+        Image('file://' + this.rewImage)
+          .width('100%')
+          .objectFit(ImageFit.Contain)
+          .layoutWeight(1)
+      } else {
+        Scroll() {
+          Text(this.log).fontSize(13).fontFamily('monospace').width('100%')
+        }.layoutWeight(1).width('100%')
+      }
     }
     .padding(16)
     .width('100%')
