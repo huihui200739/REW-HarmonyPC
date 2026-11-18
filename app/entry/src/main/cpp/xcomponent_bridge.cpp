@@ -1,4 +1,5 @@
 #include <napi/native_api.h>
+#include <hilog/log.h>
 #include <ace/xcomponent/native_interface_xcomponent.h>
 #include <native_window/external_window.h>
 #include <sys/mman.h>
@@ -14,12 +15,14 @@ void FillSolid(uint32_t argb) {
     if (g_window == nullptr) {
         return;
     }
+    OH_NativeWindow_NativeWindowHandleOpt(g_window, SET_BUFFER_GEOMETRY, g_width, g_height);
     OHNativeWindowBuffer* buffer = nullptr;
     int fenceFd = -1;
     if (OH_NativeWindow_NativeWindowRequestBuffer(g_window, &buffer, &fenceFd) != 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, 0, "REWXC", "RequestBuffer failed");
         return;
     }
-    OH_NativeWindow_NativeWindowHandleOpt(g_window, SET_BUFFER_GEOMETRY, g_width, g_height);
+    OH_LOG_Print(LOG_APP, LOG_INFO, 0, "REWXC", "FillSolid w=%{public}d h=%{public}d", g_width, g_height);
     BufferHandle* handle = OH_NativeWindow_GetBufferHandleFromNative(buffer);
     if (handle == nullptr) {
         OH_NativeWindow_NativeWindowAbortBuffer(g_window, buffer);
@@ -40,6 +43,8 @@ void FillSolid(uint32_t argb) {
 
 void OnSurfaceCreatedCB(OH_NativeXComponent* component, void* window) {
     g_window = static_cast<OHNativeWindow*>(window);
+    OH_LOG_Print(LOG_APP, LOG_INFO, 0, "REWXC", "OnSurfaceCreated");
+    FillSolid(0xFF2E7D32);
 }
 
 void OnSurfaceChangedCB(OH_NativeXComponent* component, void* window) {
@@ -47,6 +52,8 @@ void OnSurfaceChangedCB(OH_NativeXComponent* component, void* window) {
     uint64_t w = 0;
     uint64_t h = 0;
     OH_NativeXComponent_GetXComponentSize(component, window, &w, &h);
+    OH_LOG_Print(LOG_APP, LOG_INFO, 0, "REWXC", "OnSurfaceChanged %{public}llu x %{public}llu",
+                 (unsigned long long)w, (unsigned long long)h);
     if (w > 0 && h > 0) {
         g_width = static_cast<int>(w);
         g_height = static_cast<int>(h);
