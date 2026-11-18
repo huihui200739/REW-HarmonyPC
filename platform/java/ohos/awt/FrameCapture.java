@@ -48,13 +48,15 @@ public final class FrameCapture {
             Graphics2D g = img.createGraphics();
             final int[] painted = {0};
             EventQueue.invokeAndWait(() -> {
+                // NOTE: do not filter on isVisible(): our FramePeer is a stub and never
+                // flips that flag, but the component tree is fully built and paintable.
                 for (Frame f : Frame.getFrames()) {
-                    if (f.isVisible()) {
-                        g.translate(f.getX(), f.getY());
-                        f.paint(g);
-                        g.translate(-f.getX(), -f.getY());
-                        painted[0]++;
-                    }
+                    f.doLayout();
+                    f.validate();
+                    g.translate(f.getX(), f.getY());
+                    f.paint(g);
+                    g.translate(-f.getX(), -f.getY());
+                    painted[0]++;
                 }
             });
             g.dispose();
