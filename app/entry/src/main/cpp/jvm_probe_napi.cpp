@@ -470,7 +470,7 @@ std::string RunJvm(const std::string &javaHome, const std::string &workDir) {
                     std::string capPath = workDir + "/rew-window.png";
                     jstring capOut = env->NewStringUTF(capPath.c_str());
                     auto capRes = static_cast<jstring>(env->CallStaticObjectMethod(fcCls2, runCap,
-                        clsName, capOut, 120000, 1600, 1000));
+                        clsName, capOut, 180000, 1600, 1000));
                     if (env->ExceptionCheck()) {
                         JLOG("FrameCapture threw");
                         env->ExceptionClear();
