@@ -5,7 +5,14 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import sun.java2d.cmm.ColorTransform;
 
-/** identity 色彩变换：数据直通。测量数据不经过颜色映射，数值不受影响。 */
+/**
+ * Identity color transform.
+ *
+ * <p>The array based variants MUST return an array sized by the output component count, not by
+ * the input length: {@code ICC_ColorSpace.toRGB()} converts a grayscale value (1 component) and
+ * then reads {@code tmp[0..2]}, so returning {@code new short[src.length]} makes it throw
+ * {@code ArrayIndexOutOfBoundsException: Index 1 out of bounds for length 1}.</p>
+ */
 public class OhosColorTransform implements ColorTransform {
     private final int in;
     private final int out;
@@ -16,7 +23,6 @@ public class OhosColorTransform implements ColorTransform {
     @Override public int getNumOutComponents() { return out; }
 
     @Override public void colorConvert(BufferedImage src, BufferedImage dst) {
-        // 直通：复制 src 到 dst（尺寸一致时）
         int w = Math.min(src.getWidth(), dst.getWidth());
         int h = Math.min(src.getHeight(), dst.getHeight());
         int[] row = new int[w];
@@ -35,24 +41,48 @@ public class OhosColorTransform implements ColorTransform {
     @Override public void colorConvert(Raster src, WritableRaster dst) {
         int w = Math.min(src.getWidth(), dst.getWidth());
         int h = Math.min(src.getHeight(), dst.getHeight());
+        int[] row = new int[w];
         for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                for (int b = 0; b < dst.getNumBands() && b < src.getNumBands(); b++) {
-                    dst.setSample(x, y, b, src.getSampleDouble(x, y, b));
-                }
-            }
+            src.getPixels(src.getMinX(), src.getMinY() + y, w, 1, row);
+            dst.setPixels(dst.getMinX(), dst.getMinY() + y, w, 1, row);
         }
     }
 
     @Override public short[] colorConvert(short[] src, short[] dest) {
-        short[] out = (dest != null && dest.length >= src.length) ? dest : new short[src.length];
-        System.arraycopy(src, 0, out, 0, src.length);
-        return out;
+        int n = out > 0 ? out : 3;
+        short[] r = (dest != null && dest.length >= n) ? dest : new short[n];
+        if (src.length == n) {
+            System.arraycopy(src, 0, r, 0, n);
+        } else if (src.length == 1) {
+            r[0] = src[0];
+            if (n > 1) {
+                r[1] = src[0];
+            }
+            if (n > 2) {
+                r[2] = src[0];
+            }
+        } else {
+            System.arraycopy(src, 0, r, 0, Math.min(src.length, n));
+        }
+        return r;
     }
 
     @Override public byte[] colorConvert(byte[] src, byte[] dest) {
-        byte[] out = (dest != null && dest.length >= src.length) ? dest : new byte[src.length];
-        System.arraycopy(src, 0, out, 0, src.length);
-        return out;
+        int n = out > 0 ? out : 3;
+        byte[] r = (dest != null && dest.length >= n) ? dest : new byte[n];
+        if (src.length == n) {
+            System.arraycopy(src, 0, r, 0, n);
+        } else if (src.length == 1) {
+            r[0] = src[0];
+            if (n > 1) {
+                r[1] = src[0];
+            }
+            if (n > 2) {
+                r[2] = src[0];
+            }
+        } else {
+            System.arraycopy(src, 0, r, 0, Math.min(src.length, n));
+        }
+        return r;
     }
 }
